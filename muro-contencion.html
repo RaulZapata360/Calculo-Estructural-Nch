@@ -1590,7 +1590,7 @@ ${Array.from({length: Math.floor((cY - 80) / (B2.sp * scZ))}).map((_, i) => {
   const kg_acero = vol_conc * 85; // Estimación ~85kg/m3 para cuantía típica de muro cantiléver
 
   const geoRows = [
-    ['H libre',    f2(g.H_libre)+' m',              "Tipo Hormigón", "H25 (f'c="+m.fc+" MPa)"],
+    ['H libre',    f2(g.H_libre)+' m',              "Tipo Hormigón", "G25 (f'c="+m.fc+" MPa)"],
     ['H empotram.',f2(g.H_emp)+' m',                "Tipo Acero",    "A630-420H (fy="+m.fy+")"],
     ['e pantalla', (g.t_muro*100).toFixed(0)+' cm', "Cubicación H.", f2(vol_conc)+' m³ total'],
     ['B zapata',   f2(g.B_zap)+' m',                "Cubicación Ac.", "~"+Math.round(kg_acero)+' kg total'],
@@ -1740,7 +1740,7 @@ body{font-family:Inter,Arial,Helvetica,sans-serif;font-size:22px;color:#111;back
     <tbody>${chks}</tbody>
   </table>
   <div class="notes">
-    <b>Notas constructivas:</b> (1) Hormigon H25 (f'c=25MPa) segun NCh170. (2) Acero A630-420H (fy=420MPa) NCh430.
+    <b>Notas constructivas:</b> (1) Hormigón G25 (f'c=25MPa) según NCh170:2016. (2) Acero A630-420H (fy=420MPa) NCh430.
     (3) Relleno: Grava GP/GW compactada ≥95% Proctor Modificado (NCh1508). (4) Pp=0 en FS_des (NCh 02 §3.2, practica conservadora Chile).
     (5) Junta fria J.F. con chavetero de corte 5×10cm; limpiar superficie antes del segundo vaciado.
     (6) Impermeabilizar trasdos con 2 manos de pintura asfaltica elastomerica.

@@ -287,8 +287,8 @@
   <script>
     // Parámetros Geométricos (según croquis)
     const g = {
-      H_muro: 1.70,     // Altura total del muro (m)
-      H_tierra: 0.70,   // Altura de tierra retenida (vecino) (m)
+      H_muro: 1.50,     // Altura total del muro (m)
+      H_tierra: 0.50,   // Altura de tierra retenida (vecino) (m)
       B_zapata: 1.40,   // Ancho zapata (m)
       H_zapata: 0.20,   // Espesor zapata (m)
       t_muro: 0.15,     // Espesor muro albañilería (m)
@@ -310,7 +310,7 @@
       const sc = 200; // Escala (px/m)
       
       const px0 = w/2 - (g.B_zapata*sc)/2;
-      const pyBase = h - 90;
+      const pyBase = h - 120; // Subido para asegurar visibilidad de cotas inferiores
       const pyZapTop = pyBase - g.H_zapata*sc;
       
       // Muro centrado en zapata
@@ -382,9 +382,32 @@
         
         <!-- Zapata -->
         <rect x="${px0}" y="${pyZapTop}" width="${g.B_zapata*sc}" height="${g.H_zapata*sc}" fill="url(#concrete)" stroke="#374151" stroke-width="2"/>
-        <!-- Armadura Zapata -->
-        <rect x="${px0+10}" y="${pyBase-25}" width="${g.B_zapata*sc-20}" height="10" fill="none" stroke="#dc2626" stroke-width="2.5"/>
-        <text x="${px0+15}" y="${pyBase-30}" fill="#dc2626" font-family="Arial" font-size="9" font-weight="bold">Malla Base Ø10@20</text>
+        <!-- Armadura Zapata (Cadenas Cruzadas) -->
+        <line x1="${px0+10}" y1="${pyBase-25}" x2="${px0+g.B_zapata*sc-10}" y2="${pyBase-25}" stroke="#dc2626" stroke-width="1.5"/>
+        <line x1="${px0+10}" y1="${pyBase-15}" x2="${px0+g.B_zapata*sc-10}" y2="${pyBase-15}" stroke="#dc2626" stroke-width="1.5"/>
+        
+        <!-- Cadena Longitudinal Izquierda -->
+        <rect x="${px0+15}" y="${pyBase-35}" width="30" height="30" fill="rgba(255,0,0,0.1)" stroke="#b91c1c" stroke-width="1.5"/>
+        <circle cx="${px0+18}" cy="${pyBase-32}" r="2" fill="#7f1d1d"/>
+        <circle cx="${px0+42}" cy="${pyBase-32}" r="2" fill="#7f1d1d"/>
+        <circle cx="${px0+18}" cy="${pyBase-8}" r="2" fill="#7f1d1d"/>
+        <circle cx="${px0+42}" cy="${pyBase-8}" r="2" fill="#7f1d1d"/>
+        
+        <!-- Cadena Longitudinal Centro -->
+        <rect x="${px0+g.B_zapata*sc/2-15}" y="${pyBase-35}" width="30" height="30" fill="rgba(255,0,0,0.1)" stroke="#b91c1c" stroke-width="1.5"/>
+        <circle cx="${px0+g.B_zapata*sc/2-12}" cy="${pyBase-32}" r="2" fill="#7f1d1d"/>
+        <circle cx="${px0+g.B_zapata*sc/2+12}" cy="${pyBase-32}" r="2" fill="#7f1d1d"/>
+        <circle cx="${px0+g.B_zapata*sc/2-12}" cy="${pyBase-8}" r="2" fill="#7f1d1d"/>
+        <circle cx="${px0+g.B_zapata*sc/2+12}" cy="${pyBase-8}" r="2" fill="#7f1d1d"/>
+        
+        <!-- Cadena Longitudinal Derecha -->
+        <rect x="${px0+g.B_zapata*sc-45}" y="${pyBase-35}" width="30" height="30" fill="rgba(255,0,0,0.1)" stroke="#b91c1c" stroke-width="1.5"/>
+        <circle cx="${px0+g.B_zapata*sc-42}" cy="${pyBase-32}" r="2" fill="#7f1d1d"/>
+        <circle cx="${px0+g.B_zapata*sc-18}" cy="${pyBase-32}" r="2" fill="#7f1d1d"/>
+        <circle cx="${px0+g.B_zapata*sc-42}" cy="${pyBase-8}" r="2" fill="#7f1d1d"/>
+        <circle cx="${px0+g.B_zapata*sc-18}" cy="${pyBase-8}" r="2" fill="#7f1d1d"/>
+
+        <text x="${px0+15}" y="${pyBase-g.H_zapata*sc+5}" fill="#dc2626" font-family="Arial" font-size="9" font-weight="bold">Armadura Zapata (Cadenas Cruzadas, ver Planta)</text>
         
         <!-- Albañilería (Muro) -->
         <rect x="${xMuroL}" y="${yMuroTop + g.cadena_sup_h*sc}" width="${g.t_muro*sc}" height="${(g.H_muro - g.cadena_sup_h)*sc}" fill="url(#brick)" stroke="#9a3412" stroke-width="2"/>
@@ -401,7 +424,7 @@
         <!-- Armadura Cadena Int -->
         <rect x="${xMuroL+6}" y="${yMuroTop + g.cadena_int_y*sc + 6}" width="${g.t_muro*sc-12}" height="${g.cadena_int_h*sc-12}" fill="none" stroke="#2563eb" stroke-width="1.5"/>
         
-        <!-- Pilar/Armadura Vertical (en corte no se ve el pilar entero a menos que coincida, mostraremos armadura vertical punteada) -->
+        <!-- Pilar/Armadura Vertical -->
         <line x1="${xMuroL+9}" y1="${pyZapTop}" x2="${xMuroL+9}" y2="${yMuroTop+5}" stroke="#2563eb" stroke-width="2" stroke-dasharray="5,3"/>
         <line x1="${xMuroR-9}" y1="${pyZapTop}" x2="${xMuroR-9}" y2="${yMuroTop+5}" stroke="#2563eb" stroke-width="2" stroke-dasharray="5,3"/>
 
@@ -411,23 +434,23 @@
         <line x1="${xMuroR}" y1="${ySueloR - 10}" x2="${xMuroR + 0.30*sc}" y2="${ySueloR - 10}" stroke="#6b7280" stroke-width="1" stroke-dasharray="3,3"/>
         <text x="${xMuroR + 0.15*sc}" y="${ySueloR - 15}" text-anchor="middle" font-size="9" fill="#6b7280">30 cm</text>
         
-        <!-- Barbacana (Drenaje) con pendiente de derecha (alto) a izquierda (bajo) -->
-        <line x1="${xMuroL - 15}" y1="${yMuroTop + g.cadena_int_y*sc + (g.cadena_int_h*sc)/2 + 8}" x2="${xMuroR + 15}" y2="${yMuroTop + g.cadena_int_y*sc + (g.cadena_int_h*sc)/2 - 8}" stroke="#1e293b" stroke-width="5"/>
-        <line x1="${xMuroL - 15}" y1="${yMuroTop + g.cadena_int_y*sc + (g.cadena_int_h*sc)/2 + 8}" x2="${xMuroR + 15}" y2="${yMuroTop + g.cadena_int_y*sc + (g.cadena_int_h*sc)/2 - 8}" stroke="#94a3b8" stroke-width="2"/>
-        <text x="${xMuroR + 20}" y="${yMuroTop + g.cadena_int_y*sc + (g.cadena_int_h*sc)/2 + 4}" fill="#334155" font-family="Arial" font-size="9" font-weight="bold">Barbacana PVC Ø75mm (Pendiente 3%)</text>
+        <!-- Barbacana (Drenaje) con pendiente de derecha (alto) a izquierda (bajo) a traves de cadena int -->
+        <line x1="${xMuroL - 25}" y1="${yMuroTop + g.cadena_int_y*sc + (g.cadena_int_h*sc)/2 + 8}" x2="${xMuroR + 25}" y2="${yMuroTop + g.cadena_int_y*sc + (g.cadena_int_h*sc)/2 - 8}" stroke="#1e293b" stroke-width="7"/>
+        <line x1="${xMuroL - 24}" y1="${yMuroTop + g.cadena_int_y*sc + (g.cadena_int_h*sc)/2 + 8}" x2="${xMuroR + 24}" y2="${yMuroTop + g.cadena_int_y*sc + (g.cadena_int_h*sc)/2 - 8}" stroke="#cbd5e1" stroke-width="3"/>
+        <text x="${xMuroR + 25}" y="${yMuroTop + g.cadena_int_y*sc + (g.cadena_int_h*sc)/2 + 20}" fill="#334155" font-family="Arial" font-size="9" font-weight="bold">Barbacana PVC Ø75mm (Pendiente 3%)</text>
         
         <!-- Cotas Horizontales -->
         ${dimH(px0, xMuroL, pyBase+25, '70 cm')}
         ${dimH(xMuroL, xMuroR, pyBase+25, '15 cm')}
         ${dimH(xMuroR, px0 + g.B_zapata*sc, pyBase+25, '70 cm')}
-        ${dimH(px0, px0 + g.B_zapata*sc, pyBase+55, '1.40 mts')}
+        ${dimH(px0, px0 + g.B_zapata*sc, pyBase+55, '1.40 m')}
         
         <!-- Cotas Verticales -->
-        ${dimV(xMuroL-40, pyZapTop, ySueloL, '70 cm')}
-        ${dimV(px0-30, pyZapTop, pyBase, '20 cm')}
-        ${dimV(xMuroR+40, yMuroTop+g.cadena_int_y*sc, pyZapTop, '80 cm')}
-        ${dimV(xMuroR+40, yMuroTop, yMuroTop+g.cadena_int_y*sc, '75 cm')}
-        ${dimV(xMuroR+75, yMuroTop, pyZapTop, '1.70 mts')}
+        ${dimV(px0-50, pyZapTop, ySueloL, '50 cm')}
+        ${dimV(px0-50, pyZapTop, pyBase, '20 cm')}
+        ${dimV(px0+g.B_zapata*sc+50, yMuroTop+g.cadena_int_y*sc, pyZapTop, '75 cm')}
+        ${dimV(px0+g.B_zapata*sc+50, yMuroTop, yMuroTop+g.cadena_int_y*sc, '75 cm')}
+        ${dimV(px0+g.B_zapata*sc+90, yMuroTop, pyBase, '1.70 m')}
         
         <text x="${w/2}" y="30" text-anchor="middle" font-family="Arial" font-size="14" font-weight="bold" fill="#1e293b">PERFIL TRANSVERSAL — ALBAÑILERÍA CONFINADA</text>
       </svg>`;
@@ -532,11 +555,11 @@
         
         <!-- Cotas -->
         ${cotasSVG}
-        ${dimH(px0, px0 + g.L_total*sc, pyBase + 60, 'Largo Total = 6.00 mts')}
+        ${dimH(px0, px0 + g.L_total*sc, pyBase + 60, 'Largo Total = 6.00 m')}
         
-        ${dimV(px0 - 35, pyMuroTop + g.cadena_int_y*sc, pyZapTop, '80 cm')}
+        ${dimV(px0 - 35, pyMuroTop + g.cadena_int_y*sc, pyZapTop, '75 cm')}
         ${dimV(px0 - 35, pyMuroTop, pyMuroTop + g.cadena_int_y*sc, '75 cm')}
-        ${dimV(px0 - 70, pyMuroTop, pyZapTop, '1.70 mts')}
+        ${dimV(px0 - 70, pyMuroTop, pyBase, '1.70 m')}
         
         <text x="${w/2}" y="30" text-anchor="middle" font-family="Arial" font-size="14" font-weight="bold" fill="#1e293b">ELEVACIÓN — MIRADO DE LADO</text>
       </svg>`;
@@ -652,7 +675,7 @@
       const w = 900, h = 650;
       const sc = 200; // pixels per meter
       const px0 = w/2 - (0.15*sc)/2; // center x
-      const py0 = 80; // top y
+      const py0 = 110; // top y
       const pW = 0.15*sc;
       const pH = g.H_muro*sc;
       const zH = g.H_zapata*sc;
@@ -663,45 +686,125 @@
         
         <!-- Zapata Background -->
         <rect x="${w/2 - 1.2*sc/2}" y="${py0 + pH}" width="${1.2*sc}" height="${zH}" fill="#e5e7eb" stroke="#374151" stroke-width="1" stroke-dasharray="2"/>
-        <text x="${w/2 + 1.2*sc/2 + 10}" y="${py0 + pH + zH/2 + 4}" font-family="Arial" font-size="12" fill="#374151">Hormigón Zapata (H25)</text>
+        <text x="${w/2 + 1.2*sc/2 + 10}" y="${py0 + pH + zH - 5}" font-family="Arial" font-size="12" fill="#374151">Hormigón Zapata (G25)</text>
 
         <!-- Pilar Concrete Outline -->
         <rect x="${px0}" y="${py0}" width="${pW}" height="${pH}" fill="rgba(200,200,200,0.3)" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="4"/>
-        <text x="${px0 + pW/2}" y="${py0 + pH/2}" text-anchor="middle" transform="rotate(-90 ${px0 + pW/2} ${py0 + pH/2})" fill="#4b5563" font-family="Arial" font-size="14" font-weight="bold" opacity="0.3">SECCIÓN HORMIGÓN 15x15</text>
         
+        <!-- Intersección Cadena Superior -->
+        <rect x="${px0 - 30}" y="${py0}" width="${pW + 60}" height="${g.cadena_sup_h*sc}" fill="rgba(37,99,235,0.05)" stroke="none"/>
+        <text x="${px0 - 35}" y="${py0 + g.cadena_sup_h*sc/2 - 12}" text-anchor="end" fill="#1e3a8a" font-family="Arial" font-size="11" font-weight="bold">Cadena Superior</text>
+        <text x="${px0 - 35}" y="${py0 + g.cadena_sup_h*sc/2 + 2}" text-anchor="end" fill="#b91c1c" font-family="Arial" font-size="9">Armadura Longitudinal</text>
+        <text x="${px0 - 35}" y="${py0 + g.cadena_sup_h*sc/2 + 15}" text-anchor="end" fill="#2563eb" font-family="Arial" font-size="9">Estribos de cadena</text>
+        
+        <!-- Rebars of the Cadena Superior -->
+        <line x1="${px0 - 30}" y1="${py0 + 8}" x2="${px0 + pW + 30}" y2="${py0 + 8}" stroke="#b91c1c" stroke-width="3"/>
+        <line x1="${px0 - 30}" y1="${py0 + g.cadena_sup_h*sc - 8}" x2="${px0 + pW + 30}" y2="${py0 + g.cadena_sup_h*sc - 8}" stroke="#b91c1c" stroke-width="3"/>
+        <!-- Estribos of the Cadena Superior -->
+        <line x1="${px0 - 15}" y1="${py0 + 4}" x2="${px0 - 15}" y2="${py0 + g.cadena_sup_h*sc - 4}" stroke="#2563eb" stroke-width="1.5"/>
+        <line x1="${px0 + pW + 15}" y1="${py0 + 4}" x2="${px0 + pW + 15}" y2="${py0 + g.cadena_sup_h*sc - 4}" stroke="#2563eb" stroke-width="1.5"/>
+        
+        <!-- Intersección Cadena Intermedia -->
+        <rect x="${px0 - 30}" y="${py0 + 0.75*sc}" width="${pW + 60}" height="${g.cadena_int_h*sc}" fill="rgba(37,99,235,0.05)" stroke="none"/>
+        <text x="${px0 - 35}" y="${py0 + 0.75*sc + g.cadena_int_h*sc/2 - 12}" text-anchor="end" fill="#1e3a8a" font-family="Arial" font-size="11" font-weight="bold">Cadena Central</text>
+        <text x="${px0 - 35}" y="${py0 + 0.75*sc + g.cadena_int_h*sc/2 + 2}" text-anchor="end" fill="#b91c1c" font-family="Arial" font-size="9">Armadura Longitudinal</text>
+        <text x="${px0 - 35}" y="${py0 + 0.75*sc + g.cadena_int_h*sc/2 + 15}" text-anchor="end" fill="#2563eb" font-family="Arial" font-size="9">Estribos de cadena</text>
+        
+        <!-- Rebars of the chain (Front view: top and bottom lines) -->
+        <line x1="${px0 - 30}" y1="${py0 + 0.75*sc + 8}" x2="${px0 + pW + 30}" y2="${py0 + 0.75*sc + 8}" stroke="#b91c1c" stroke-width="3"/>
+        <line x1="${px0 - 30}" y1="${py0 + 0.75*sc + g.cadena_int_h*sc - 8}" x2="${px0 + pW + 30}" y2="${py0 + 0.75*sc + g.cadena_int_h*sc - 8}" stroke="#b91c1c" stroke-width="3"/>
+        <!-- Estribos of the chain (Vertical lines) -->
+        <line x1="${px0 - 15}" y1="${py0 + 0.75*sc + 4}" x2="${px0 - 15}" y2="${py0 + 0.75*sc + g.cadena_int_h*sc - 4}" stroke="#2563eb" stroke-width="1.5"/>
+        <line x1="${px0 + pW + 15}" y1="${py0 + 0.75*sc + 4}" x2="${px0 + pW + 15}" y2="${py0 + 0.75*sc + g.cadena_int_h*sc - 4}" stroke="#2563eb" stroke-width="1.5"/>
+
+        <!-- Intersección Cadena Zapata -->
+        <text x="${px0 - 35}" y="${py0 + pH + zH/2 - 12}" text-anchor="end" fill="#1e3a8a" font-family="Arial" font-size="11" font-weight="bold">Cadena Fundación</text>
+        <text x="${px0 - 35}" y="${py0 + pH + zH/2 + 2}" text-anchor="end" fill="#b91c1c" font-family="Arial" font-size="9">4Ø10 mm (Long.)</text>
+        <text x="${px0 - 35}" y="${py0 + pH + zH/2 + 15}" text-anchor="end" fill="#2563eb" font-family="Arial" font-size="9">Estribos Ø6 @ 15cm</text>
+        
+        <line x1="${px0 - 30}" y1="${py0 + pH + 12}" x2="${px0 + pW + 30}" y2="${py0 + pH + 12}" stroke="#b91c1c" stroke-width="3"/>
+        <line x1="${px0 - 30}" y1="${py0 + pH + zH - 12}" x2="${px0 + pW + 30}" y2="${py0 + pH + zH - 12}" stroke="#b91c1c" stroke-width="3"/>
+        
+        <line x1="${px0 - 15}" y1="${py0 + pH + 8}" x2="${px0 - 15}" y2="${py0 + pH + zH - 8}" stroke="#2563eb" stroke-width="1.5"/>
+        <line x1="${px0 + pW + 15}" y1="${py0 + pH + 8}" x2="${px0 + pW + 15}" y2="${py0 + pH + zH - 8}" stroke="#2563eb" stroke-width="1.5"/>
+
+        <!-- Recubrimientos -->
+        <g stroke="#059669" stroke-width="1" fill="none">
+          <!-- Lateral izq -->
+          <line x1="${px0}" y1="${py0 + 60}" x2="${px0 + 6}" y2="${py0 + 60}" />
+          <!-- Lateral der -->
+          <line x1="${px0 + pW - 10}" y1="${py0 + 60}" x2="${px0 + pW}" y2="${py0 + 60}" />
+          <!-- Coronacion -->
+          <line x1="${px0 + pW/2}" y1="${py0}" x2="${px0 + pW/2}" y2="${py0 - 15}" />
+        </g>
+        <text x="${px0 - 5}" y="${py0 + 63}" text-anchor="end" fill="#059669" font-family="Arial" font-size="10">r = 2.5 cm</text>
+        <text x="${px0 + pW + 5}" y="${py0 + 63}" fill="#059669" font-family="Arial" font-size="10">r = 4.0 cm (hacia terreno)</text>
+        <text x="${px0 + pW/2 + 5}" y="${py0 - 10}" fill="#059669" font-family="Arial" font-size="10">r = 3.0 cm (coronación)</text>
+
         <!-- Longitudinal Rebar (left and right to represent 4 bars) -->
-        <!-- Left bars -->
-        <path d="M ${px0 + 6} ${py0 - 15} L ${px0 + 6} ${py0 + pH + zH - 10} L ${px0 + 35} ${py0 + pH + zH - 10}" fill="none" stroke="#b91c1c" stroke-width="3"/>
-        <!-- Right bars -->
-        <path d="M ${px0 + pW - 6} ${py0 - 15} L ${px0 + pW - 6} ${py0 + pH + zH - 10} L ${px0 + pW - 35} ${py0 + pH + zH - 10}" fill="none" stroke="#b91c1c" stroke-width="3"/>
+        <!-- Left bars (top hook INWARDS, bottom hook OUTWARDS) -->
+        <path d="M ${px0 + 6 + 15} ${py0 + 15} L ${px0 + 6} ${py0 + 15} L ${px0 + 6} ${py0 + pH + zH - 10} L ${px0 - 25} ${py0 + pH + zH - 10}" fill="none" stroke="#b91c1c" stroke-width="3"/>
+        <!-- Right bars (top hook INWARDS, bottom hook OUTWARDS) -->
+        <path d="M ${px0 + pW - 6 - 15} ${py0 + 15} L ${px0 + pW - 6} ${py0 + 15} L ${px0 + pW - 6} ${py0 + pH + zH - 10} L ${px0 + pW + 25} ${py0 + pH + zH - 10}" fill="none" stroke="#b91c1c" stroke-width="3"/>
+        
+        <!-- Callout Gancho Superior -->
+        <line x1="${px0 + 15}" y1="${py0 + 15}" x2="${px0 - 40}" y2="${py0 - 20}" stroke="#b91c1c" stroke-width="1"/>
+        <text x="${px0 - 45}" y="${py0 - 25}" text-anchor="end" fill="#b91c1c" font-family="Arial" font-size="11" font-weight="bold">Anclaje en Cadena Superior</text>
+        <text x="${px0 - 45}" y="${py0 - 12}" text-anchor="end" fill="#7f1d1d" font-family="Arial" font-size="9">Gancho Ld = 20cm</text>
         
         <!-- Stirrups (Estribos) -->
         <g stroke="#1d4ed8" stroke-width="2" fill="none">`;
         
-      const numStirrups = Math.floor(g.H_muro / 0.15);
-      for(let i=0; i<=numStirrups; i++) {
-        const yE = py0 + i * (0.15*sc);
-        svg += `<line x1="${px0 - 4}" y1="${yE}" x2="${px0 + pW + 4}" y2="${yE}"/>`;
-      }
+      const vanos = [
+        // Vano 1 (Inferior: entre zapata y cadena central)
+        { yBase: py0 + pH, yCima: py0 + 0.75*sc + g.cadena_int_h*sc },
+        // Vano 2 (Superior: entre cadena central y cadena superior)
+        { yBase: py0 + 0.75*sc, yCima: py0 + g.cadena_sup_h*sc }
+      ];
+
+      let dist_primer = 0.05 * sc;
+      let s_estribo = 0.15 * sc;
+
+      vanos.forEach(v => {
+        let L_vano = v.yBase - v.yCima;
+        let L_util = L_vano - 2 * dist_primer;
+        if(L_util >= 0) {
+          let num_half = Math.floor((L_util / 2) / s_estribo);
+          // Desde la base del vano hacia arriba
+          for(let k=0; k<=num_half; k++) {
+            let yE = v.yBase - dist_primer - k * s_estribo;
+            svg += `<line x1="${px0 - 4}" y1="${yE}" x2="${px0 + pW + 4}" y2="${yE}"/>`;
+          }
+          // Desde la cima del vano hacia abajo
+          for(let k=0; k<=num_half; k++) {
+            let yE = v.yCima + dist_primer + k * s_estribo;
+            let yBaseEq = v.yBase - dist_primer - num_half * s_estribo;
+            // Evitar dibujar doble si coinciden en el centro
+            if(Math.abs(yE - yBaseEq) > 2) {
+              svg += `<line x1="${px0 - 4}" y1="${yE}" x2="${px0 + pW + 4}" y2="${yE}"/>`;
+            }
+          }
+        }
+      });
         
       svg += `</g>
         
         <!-- Callouts -->
         <!-- Longitudinal -->
-        <line x1="${px0 + pW}" y1="${py0 + 60}" x2="${px0 + pW + 80}" y2="${py0 + 30}" stroke="#b91c1c" stroke-width="1"/>
-        <text x="${px0 + pW + 85}" y="${py0 + 30}" fill="#b91c1c" font-family="Arial" font-size="12" font-weight="bold">4Ø10 mm (Acero Longitudinal)</text>
-        <text x="${px0 + pW + 85}" y="${py0 + 45}" fill="#7f1d1d" font-family="Arial" font-size="10">Largo Total Corte = 2.30 m (incluye ganchos)</text>
+        <line x1="${px0 + pW}" y1="${py0 + 100}" x2="${px0 + pW + 80}" y2="${py0 + 100}" stroke="#b91c1c" stroke-width="1"/>
+        <text x="${px0 + pW + 85}" y="${py0 + 105}" fill="#b91c1c" font-family="Arial" font-size="12" font-weight="bold">4Ø10 mm (Acero Longitudinal)</text>
+        <text x="${px0 + pW + 85}" y="${py0 + 120}" fill="#7f1d1d" font-family="Arial" font-size="10">Largo Total Corte = 2.10 m (incluye ganchos)</text>
         
         <!-- Stirrups -->
-        <line x1="${px0 - 4}" y1="${py0 + 120}" x2="${px0 - 60}" y2="${py0 + 90}" stroke="#1d4ed8" stroke-width="1"/>
-        <text x="${px0 - 65}" y="${py0 + 85}" text-anchor="end" fill="#1d4ed8" font-family="Arial" font-size="12" font-weight="bold">Estribos Ø6 @ 15cm</text>
-        <text x="${px0 - 65}" y="${py0 + 100}" text-anchor="end" fill="#1e3a8a" font-family="Arial" font-size="10">Amarre sísmico 135°</text>
+        <line x1="${px0 - 4}" y1="${py0 + 140}" x2="${px0 - 60}" y2="${py0 + 110}" stroke="#1d4ed8" stroke-width="1"/>
+        <text x="${px0 - 65}" y="${py0 + 105}" text-anchor="end" fill="#1d4ed8" font-family="Arial" font-size="12" font-weight="bold">Estribos Ø6 @ 15cm</text>
+        <text x="${px0 - 65}" y="${py0 + 120}" text-anchor="end" fill="#1e3a8a" font-family="Arial" font-size="10">Amarre sísmico 135°</text>
         
         <!-- Hook/Anchorage -->
         <circle cx="${px0 + 6}" cy="${py0 + pH + zH - 10}" r="4" fill="#b91c1c"/>
         <line x1="${px0 + 6}" y1="${py0 + pH + zH - 10}" x2="${px0 - 50}" y2="${py0 + pH + zH + 20}" stroke="#b91c1c" stroke-width="1"/>
-        <text x="${px0 - 55}" y="${py0 + pH + zH + 25}" text-anchor="end" fill="#b91c1c" font-family="Arial" font-size="12" font-weight="bold">Anclaje en Zapata (Empalme)</text>
-        <text x="${px0 - 55}" y="${py0 + pH + zH + 40}" text-anchor="end" fill="#7f1d1d" font-family="Arial" font-size="10">Longitud de desarrollo pata = 20cm mín.</text>
+        <text x="${px0 - 55}" y="${py0 + pH + zH + 25}" text-anchor="end" fill="#b91c1c" font-family="Arial" font-size="12" font-weight="bold">Anclaje en Zapata (hacia exterior)</text>
+        <text x="${px0 - 55}" y="${py0 + pH + zH + 40}" text-anchor="end" fill="#7f1d1d" font-family="Arial" font-size="10">Ld = 20cm mín.</text>
 
         <!-- Dimension Lines -->
         <g stroke="#0055a0" stroke-width="0.8" fill="none">
@@ -709,7 +812,7 @@
           <line x1="${px0 - 155}" y1="${py0}" x2="${px0 - 145}" y2="${py0}"/>
           <line x1="${px0 - 155}" y1="${py0 + pH}" x2="${px0 - 145}" y2="${py0 + pH}"/>
         </g>
-        <text x="${px0 - 160}" y="${py0 + pH/2}" text-anchor="end" fill="#0055a0" font-family="Arial" font-size="12">Altura Pilar = 1.70 m</text>
+        <text x="${px0 - 160}" y="${py0 + pH/2}" text-anchor="end" fill="#0055a0" font-family="Arial" font-size="12">Altura Pilar = 1.50 m</text>
         
         <g stroke="#0055a0" stroke-width="0.8" fill="none">
           <line x1="${px0 - 150}" y1="${py0 + pH}" x2="${px0 - 150}" y2="${py0 + pH + zH}"/>
@@ -728,6 +831,124 @@
       return svg;
     }
 
+    function renderDetalleCadena() {
+      const w = 900, h = 500;
+      const sc = 120; // 6m fits in 720px
+      const px0 = w/2 - (g.L_total*sc)/2;
+      
+      let svg = `<svg viewBox="0 0 ${w} ${h}">
+        <rect width="${w}" height="${h}" fill="#f8fafc"/>
+        <text x="${w/2}" y="35" text-anchor="middle" font-family="Arial" font-size="16" font-weight="bold" fill="#1e293b">DETALLE DE ARMADURA — CADENAS (Superior e Intermedia)</text>
+        <text x="${w/2}" y="55" text-anchor="middle" font-family="Arial" font-size="12" fill="#475569">Vistas Longitudinales (L = 6.00 m)</text>`;
+        
+      function drawChain(py0, cH, labelTitle, isTopChain) {
+        let out = `<text x="${px0 - 15}" y="${py0 + cH/2 + 5}" text-anchor="end" font-family="Arial" font-size="12" font-weight="bold" fill="#334155">${labelTitle}</text>
+        
+        <!-- Concrete Outline -->
+        <rect x="${px0}" y="${py0}" width="${g.L_total*sc}" height="${cH}" fill="rgba(200,200,200,0.3)" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="4"/>
+        
+        <!-- Longitudinal Rebars -->
+        <line x1="${px0 + 5}" y1="${py0 + 8}" x2="${px0 + g.L_total*sc - 5}" y2="${py0 + 8}" stroke="#b91c1c" stroke-width="3"/>
+        <line x1="${px0 + 5}" y1="${py0 + cH - 8}" x2="${px0 + g.L_total*sc - 5}" y2="${py0 + cH - 8}" stroke="#b91c1c" stroke-width="3"/>
+        
+        <!-- Estribos -->
+        <g stroke="#1d4ed8" stroke-width="1.5" fill="none">`;
+        
+        const numPilaresCount = Math.floor(g.L_total / g.pilar_s) + 1;
+        let pillarFaces = [];
+        for(let j=0; j<numPilaresCount; j++) {
+          let xDraw = px0 + j * g.pilar_s * sc - (0.15*sc)/2;
+          if(j === 0) xDraw = px0;
+          if(j === numPilaresCount - 1) xDraw = px0 + g.L_total*sc - (0.15*sc);
+          pillarFaces.push({ left: xDraw, right: xDraw + 0.15*sc });
+        }
+        
+        // Estribos distribuidos simétricamente por vano
+        for(let j=0; j<pillarFaces.length - 1; j++) {
+          let xVanoStart = pillarFaces[j].right;
+          let xVanoEnd = pillarFaces[j+1].left;
+          let L_vano = xVanoEnd - xVanoStart;
+          
+          let dist_primer = 0.05 * sc; // 5 cm desde la cara de la columna
+          let s_estribo = 0.15 * sc; // @15 cm
+          
+          let L_util = L_vano - 2 * dist_primer;
+          if(L_util < 0) continue;
+          
+          let num_half = Math.floor((L_util / 2) / s_estribo);
+          
+          // Mitad izquierda del vano
+          for(let k=0; k<=num_half; k++) {
+            let xE = xVanoStart + dist_primer + k * s_estribo;
+            out += `<line x1="${xE}" y1="${py0 + 4}" x2="${xE}" y2="${py0 + cH - 4}"/>`;
+          }
+          // Mitad derecha del vano
+          for(let k=0; k<=num_half; k++) {
+            let xE = xVanoEnd - dist_primer - k * s_estribo;
+            let xLeftEq = xVanoStart + dist_primer + num_half * s_estribo;
+            // Evitar dibujar doble si caen exactamente en el centro (margen de 2 px)
+            if(Math.abs(xE - xLeftEq) > 2) {
+              out += `<line x1="${xE}" y1="${py0 + 4}" x2="${xE}" y2="${py0 + cH - 4}"/>`;
+            }
+          }
+        }
+        
+        out += `</g>
+        
+        <!-- Pilares cruzando (para mostrar intersección real de armaduras) -->
+        <g stroke="#374151" stroke-width="1" stroke-dasharray="3,3" fill="rgba(0,0,0,0.05)">`;
+        const numPilares = Math.floor(g.L_total / g.pilar_s) + 1;
+        for(let i=0; i<numPilares; i++) {
+          const xP = px0 + i * g.pilar_s * sc - (0.15*sc)/2;
+          let xDraw = xP;
+          if(i === 0) xDraw = px0;
+          if(i === numPilares - 1) xDraw = px0 + g.L_total*sc - (0.15*sc);
+          
+          let pTop = isTopChain ? py0 : py0 - 20;
+          let pHeight = isTopChain ? cH + 30 : cH + 40;
+          let labelY = isTopChain ? py0 + cH + 25 : py0 - 25;
+          
+          // Contorno del Pilar
+          out += `<rect x="${xDraw}" y="${pTop}" width="${0.15*sc}" height="${pHeight}"/>`;
+          out += `<text x="${xDraw + (0.15*sc)/2}" y="${labelY}" text-anchor="middle" font-size="9" fill="#374151">Pilar</text>`;
+          
+          // Armadura vertical del pilar
+          let rTop = isTopChain ? py0 + 5 : py0 - 20;
+          out += `<line x1="${xDraw + 6}" y1="${rTop}" x2="${xDraw + 6}" y2="${py0 + cH + 20}" stroke="#b91c1c" stroke-width="2" stroke-dasharray="none" opacity="0.5"/>`;
+          out += `<line x1="${xDraw + (0.15*sc) - 6}" y1="${rTop}" x2="${xDraw + (0.15*sc) - 6}" y2="${py0 + cH + 20}" stroke="#b91c1c" stroke-width="2" stroke-dasharray="none" opacity="0.5"/>`;
+          
+          if(isTopChain) {
+            // Remate (gancho) de la armadura del pilar en la cadena superior
+            out += `<line x1="${xDraw + 6}" y1="${rTop}" x2="${xDraw + 12}" y2="${rTop}" stroke="#b91c1c" stroke-width="2" stroke-dasharray="none" opacity="0.5"/>`;
+            out += `<line x1="${xDraw + (0.15*sc) - 6}" y1="${rTop}" x2="${xDraw + (0.15*sc) - 12}" y2="${rTop}" stroke="#b91c1c" stroke-width="2" stroke-dasharray="none" opacity="0.5"/>`;
+          }
+          
+          // Estribo del pilar en el nudo
+          out += `<line x1="${xDraw + 4}" y1="${py0 + cH/2}" x2="${xDraw + (0.15*sc) - 4}" y2="${py0 + cH/2}" stroke="#1d4ed8" stroke-width="1.5" stroke-dasharray="none" opacity="0.5"/>`;
+        }
+        out += `</g>
+        
+        <!-- Callouts -->
+        <!-- Longitudinal -->
+        <line x1="${px0 + 350}" y1="${py0 + 8}" x2="${px0 + 350}" y2="${py0 - 30}" stroke="#b91c1c" stroke-width="1"/>
+        <text x="${px0 + 350}" y="${py0 - 35}" text-anchor="middle" fill="#b91c1c" font-family="Arial" font-size="12" font-weight="bold">Acero Longitudinal Superior (2Ø10 mm)</text>
+        
+        <line x1="${px0 + 350}" y1="${py0 + cH - 8}" x2="${px0 + 350}" y2="${py0 + cH + 30}" stroke="#b91c1c" stroke-width="1"/>
+        <text x="${px0 + 350}" y="${py0 + cH + 40}" text-anchor="middle" fill="#b91c1c" font-family="Arial" font-size="12" font-weight="bold">Acero Longitudinal Inferior (2Ø10 mm)</text>
+        
+        <!-- Stirrups -->
+        <line x1="${px0 + 150}" y1="${py0 + cH/2}" x2="${px0 + 120}" y2="${py0 + cH + 40}" stroke="#1d4ed8" stroke-width="1"/>
+        <text x="${px0 + 115}" y="${py0 + cH + 45}" text-anchor="end" fill="#1d4ed8" font-family="Arial" font-size="12" font-weight="bold">Estribos Ø6 @ 15cm</text>`;
+        return out;
+      }
+      
+      svg += drawChain(120, g.cadena_sup_h*sc, "Cadena Superior (15x20)", true);
+      svg += drawChain(330, g.cadena_int_h*sc, "Cadena Intermedia (15x15)", false);
+      
+      svg += `</svg>`;
+      return svg;
+    }
+
     const app = document.getElementById('app');
 
     app.innerHTML = `
@@ -739,7 +960,10 @@
               <p>Perfil Transversal y Dimensionamiento</p>
             </div>
             <div class="header-right">
-              <div class="logo">LAYEL</div>
+              <div class="logo" style="font-size:11px; font-weight:normal; text-align:right; color:#64748b; font-family:Arial, sans-serif; line-height:1.4;">
+                Ing. Calculista: Raúl Zapata Novoa<br>
+                Fecha: 23-05-2026
+              </div>
               <p>Ingeniería Estructural</p>
             </div>
           </div>
@@ -759,7 +983,10 @@
               <p>Elevación y Disposición de Pilares</p>
             </div>
             <div class="header-right">
-              <div class="logo">LAYEL</div>
+              <div class="logo" style="font-size:11px; font-weight:normal; text-align:right; color:#64748b; font-family:Arial, sans-serif; line-height:1.4;">
+                Ing. Calculista: Raúl Zapata Novoa<br>
+                Fecha: 23-05-2026
+              </div>
             </div>
           </div>
           <div class="content">
@@ -778,7 +1005,10 @@
               <p>Planta de Fundación (Grilla 70x70)</p>
             </div>
             <div class="header-right">
-              <div class="logo">LAYEL</div>
+              <div class="logo" style="font-size:11px; font-weight:normal; text-align:right; color:#64748b; font-family:Arial, sans-serif; line-height:1.4;">
+                Ing. Calculista: Raúl Zapata Novoa<br>
+                Fecha: 23-05-2026
+              </div>
             </div>
           </div>
           <div class="content">
@@ -797,7 +1027,10 @@
               <p>Detalle de Armadura Pilar (15x15 cm)</p>
             </div>
             <div class="header-right">
-              <div class="logo">LAYEL</div>
+              <div class="logo" style="font-size:11px; font-weight:normal; text-align:right; color:#64748b; font-family:Arial, sans-serif; line-height:1.4;">
+                Ing. Calculista: Raúl Zapata Novoa<br>
+                Fecha: 23-05-2026
+              </div>
             </div>
           </div>
           <div class="content">
@@ -813,22 +1046,55 @@
           <div class="header">
             <div class="header-left">
               <h2>Muro Albañilería Confinada</h2>
+              <p>Detalle de Armadura Cadenas (Superior e Intermedia)</p>
+            </div>
+            <div class="header-right">
+              <div class="logo" style="font-size:11px; font-weight:normal; text-align:right; color:#64748b; font-family:Arial, sans-serif; line-height:1.4;">
+                Ing. Calculista: Raúl Zapata Novoa<br>
+                Fecha: 23-05-2026
+              </div>
+            </div>
+          </div>
+          <div class="content">
+            <div class="svg-container">
+              ${renderDetalleCadena()}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page">
+        <div class="page-inner">
+          <div class="header">
+            <div class="header-left">
+              <h2>Muro Albañilería Confinada</h2>
               <p>Cubicación Estimada de Materiales</p>
             </div>
             <div class="header-right">
-              <div class="logo">LAYEL</div>
+              <div class="logo" style="font-size:11px; font-weight:normal; text-align:right; color:#64748b; font-family:Arial, sans-serif; line-height:1.4;">
+                Ing. Calculista: Raúl Zapata Novoa<br>
+                Fecha: 23-05-2026
+              </div>
             </div>
           </div>
           <div class="content" style="padding: 20px;">
             <style>
               .table-materials {
                 width: 100%;
+                table-layout: fixed;
+                word-wrap: break-word;
                 border-collapse: collapse;
                 margin-top: 20px;
+                font-size: 13px;
               }
+              .table-materials th:nth-child(1) { width: 22%; }
+              .table-materials th:nth-child(2) { width: 30%; }
+              .table-materials th:nth-child(3) { width: 13%; text-align: center; }
+              .table-materials th:nth-child(4) { width: 35%; }
+              .table-materials td:nth-child(3) { text-align: center; }
               .table-materials th, .table-materials td {
                 border: 1px solid #cbd5e1;
-                padding: 12px;
+                padding: 10px;
                 text-align: left;
               }
               .table-materials th {
@@ -850,39 +1116,39 @@
               <tbody>
                 <tr>
                   <td><strong>Zapata de Fundación</strong></td>
-                  <td>Hormigón H25 (f'c=25 MPa)<br><span style="font-size:11px; color:#64748b;">Nivel de Confianza 90%, Árido 20mm</span></td>
+                  <td>Hormigón G25 (f'c=25 MPa)<br><span style="font-size:11px; color:#64748b;">Nivel de Confianza 90%, Árido 20mm</span></td>
                   <td><strong>1.76 m³</strong></td>
                   <td><span style="font-size:11px;">(1.40m × 0.20m × 6.00m) = 1.68 m³<br>+ 5% pérdida por compactación y nivelación.</span></td>
                 </tr>
                 <tr>
                   <td><strong>Hormigón Pilares y Cadenas</strong></td>
-                  <td>Hormigón H25 (f'c=25 MPa)<br><span style="font-size:11px; color:#64748b;">Árido max 12mm (para facilitar llenado)</span></td>
-                  <td><strong>0.63 m³</strong></td>
-                  <td><span style="font-size:11px;">7 Pilares (15x15x1.70m) = 0.268 m³<br>Cadenas Int y Sup (15x15 y 15x20) = 0.315 m³<br>+ 8% pérdida (derrames en moldaje reducido).</span></td>
+                  <td>Hormigón G25 (f'c=25 MPa)<br><span style="font-size:11px; color:#64748b;">Árido max 12mm (para facilitar llenado)</span></td>
+                  <td><strong>0.60 m³</strong></td>
+                  <td><span style="font-size:11px;">7 Pilares (15x15x1.50m) = 0.24 m³<br>Cadenas Int y Sup (15x15 y 15x20) = 0.315 m³<br>+ 8% pérdida (derrames en moldaje reducido).</span></td>
                 </tr>
                 <tr>
                   <td><strong>Albañilería (Muro)</strong></td>
                   <td>Ladrillo Fiscal o Titán<br><span style="font-size:11px; color:#64748b;">(28.5 × 14.0 × 4.5 cm) Asentado de soga (15cm)</span></td>
-                  <td><strong>~390 unid.</strong></td>
-                  <td><span style="font-size:11px;">Área bruta = 10.20 m² | Área neta (sin H.A.) = 6.68 m²<br>Rendimiento = 55.5 ladrillos/m² (Mortero 1.5cm)<br>Subtotal = 371 unid. + <strong>5% despunte y roturas</strong>.</span></td>
+                  <td><strong>~335 unid.</strong></td>
+                  <td><span style="font-size:11px;">Área bruta = 9.00 m² | Área neta (sin H.A.) = 5.69 m²<br>Rendimiento = 55.5 ladrillos/m² (Mortero 1.5cm)<br>Subtotal = 316 unid. + <strong>5% despunte y roturas</strong>.</span></td>
                 </tr>
                 <tr>
                   <td><strong>Mortero de Pega</strong></td>
                   <td>Mortero Predosificado H10<br><span style="font-size:11px; color:#64748b;">Proporción 1:3 o 1:4 (cemento:arena)</span></td>
-                  <td><strong>0.22 m³</strong></td>
-                  <td><span style="font-size:11px;">Volumen aproximado de llagas y tendeles para 6.68 m² de albañilería (espesor 1.5 cm) + 10% pérdida.</span></td>
+                  <td><strong>0.19 m³</strong></td>
+                  <td><span style="font-size:11px;">Volumen aproximado de llagas y tendeles para 5.69 m² de albañilería (espesor 1.5 cm) + 10% pérdida.</span></td>
                 </tr>
                 <tr>
                   <td><strong>Acero Longitudinal (Armadura)</strong></td>
                   <td>Acero A630-420H (Grado 60)<br><span style="font-size:11px; color:#64748b;">Barras de Ø10mm estriadas</span></td>
-                  <td><strong>140.0 kg</strong></td>
-                  <td><span style="font-size:11px;">Zapata (12 barrasx6.0m=72m) + Pilares (28x2.3m=64.4m) + Cadenas (8x6.0m=48.0m)<br>Subtotal: 184.4 m × 0.617 kg/m = 113.8 kg<br><strong>+ 23% extra por empalmes (40Ø) y despuntes largos.</strong></span></td>
+                  <td><strong>136.0 kg</strong></td>
+                  <td><span style="font-size:11px;">Zapata (12 barrasx6.0m=72m) + Pilares (28x2.1m=58.8m) + Cadenas (8x6.0m=48.0m)<br>Subtotal: 178.8 m × 0.617 kg/m = 110.3 kg<br><strong>+ 23% extra por empalmes (40Ø) y despuntes largos.</strong></span></td>
                 </tr>
                 <tr>
                   <td><strong>Acero Transversal (Estribos)</strong></td>
                   <td>Acero A630-420H o AT56-50H<br><span style="font-size:11px; color:#64748b;">Barras de Ø6mm @ 15cm</span></td>
-                  <td><strong>32.0 kg</strong></td>
-                  <td><span style="font-size:11px;">Perímetro 15x15 → Estribo L=0.50m. Pilares (84 unid) + Cadenas (80) + Zapata (100).<br>Subtotal: 264 estribos × 0.50m = 132m × 0.222 kg/m = 29.3 kg<br><strong>+ 10% por ganchos sísmicos (135°) y pérdidas.</strong></span></td>
+                  <td><strong>33.0 kg</strong></td>
+                  <td><span style="font-size:11px;">Perímetro 15x15 → Estribo L=0.50m. Pilares (70 unid) + Cadenas (80) + Zapata (120).<br>Subtotal: 270 estribos × 0.50m = 135m × 0.222 kg/m = 30.0 kg<br><strong>+ 10% por ganchos sísmicos (135°) y pérdidas.</strong></span></td>
                 </tr>
                 <tr>
                   <td><strong>Relleno Drenante (Trasdós)</strong></td>
@@ -904,7 +1170,10 @@
               <p>Recomendaciones Constructivas (1/2)</p>
             </div>
             <div class="header-right">
-              <div class="logo">LAYEL</div>
+              <div class="logo" style="font-size:11px; font-weight:normal; text-align:right; color:#64748b; font-family:Arial, sans-serif; line-height:1.4;">
+                Ing. Calculista: Raúl Zapata Novoa<br>
+                Fecha: 23-05-2026
+              </div>
             </div>
           </div>
           <div class="content" style="padding: 20px;">
@@ -968,7 +1237,10 @@
               <p>Justificación Estructural (2/2)</p>
             </div>
             <div class="header-right">
-              <div class="logo">LAYEL</div>
+              <div class="logo" style="font-size:11px; font-weight:normal; text-align:right; color:#64748b; font-family:Arial, sans-serif; line-height:1.4;">
+                Ing. Calculista: Raúl Zapata Novoa<br>
+                Fecha: 23-05-2026
+              </div>
             </div>
           </div>
           <div class="content" style="padding: 20px;">
@@ -990,6 +1262,34 @@
                 <li><strong>Luz Libre Corta:</strong> La separación entre pilares es de apenas 1.00 m. Esta corta distancia hace que el momento flector horizontal (M_u ≈ 0.48 kNm) sea mínimo.</li>
                 <li><strong>Capacidad Resistente:</strong> Al igual que los pilares, las cadenas de 15x15 cm armadas con <strong>4Ø10mm</strong> ofrecen una resistencia a flexión horizontal de φMn ≈ 5.9 kNm.</li>
                 <li><strong>Conclusión:</strong> El diseño asegura que ni los pilares por flexión vertical ni las cadenas por flexión horizontal fallarán ante el empuje de tierras para esta altura, garantizando la integridad del muro de contención.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page">
+        <div class="page-inner">
+          <div class="header">
+            <div class="header-left">
+              <h2>Muro Albañilería Confinada</h2>
+              <p>Recomendaciones Constructivas y Correcciones (3/3)</p>
+            </div>
+            <div class="header-right">
+              <div class="logo" style="font-size:11px; font-weight:normal; text-align:right; color:#64748b; font-family:Arial, sans-serif; line-height:1.4;">
+                Ing. Calculista: Raúl Zapata Novoa<br>
+                Fecha: 23-05-2026
+              </div>
+            </div>
+          </div>
+          <div class="content" style="padding: 20px;">
+            <div class="rec-box">
+              <h4>5. USO DE CADENA INTERMEDIA VS. BARRAS EN EL MORTERO ("CHORIZO")</h4>
+              <p>Una consulta frecuente en obra es la posibilidad de eliminar la cadena intermedia de hormigón armado y reemplazarla por albañilería continua reforzada con una barra de acero en la cantería de mortero (conocido coloquialmente como "chorizo" o escalerilla). <strong>Para este muro de contención, esta sustitución está estrictamente descartada por las siguientes razones:</strong></p>
+              <ul>
+                <li><strong>Falta de Resistencia a Flexión Horizontal:</strong> A diferencia de un muro divisorio, este muro soporta el empuje activo de la tierra. Si se elimina la cadena, el paño de albañilería (de 1.50 m de alto) quedaría libre y tendería a "guatear" (abombarse) en el centro. Los ladrillos y el mortero son incapaces de resistir estas fuerzas de flexión lateral por sí solos.</li>
+                <li><strong>Función de Viga de Traspaso (15x15):</strong> La cadena central de hormigón actúa como una viga rígida que divide la altura libre del muro en dos segmentos seguros de 75 cm. Esta cadena recibe la presión de la tierra y la transfiere de manera segura a los pilares de confinamiento. Un simple fierro en el tendel de mortero carece por completo de la inercia geométrica para cumplir esta función.</li>
+                <li><strong>Protección contra el Corte:</strong> La ubicación de la cadena intermedia coincide casi exactamente con el nivel del terreno inferior. Este es el punto de máximo esfuerzo de cizalle (corte). La sección de hormigón armado es vital para absorber este corte y evitar que el muro colapse o se deslice horizontalmente en esa junta crítica.</li>
               </ul>
             </div>
           </div>
