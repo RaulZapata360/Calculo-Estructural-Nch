@@ -1,0 +1,27 @@
+# ── Temporales ────────────────────────────────────────────
+temp.js
+temp_review.pdf
+*.tmp
+*.bak
+*.swp
+
+# ── PDFs de normas (archivos grandes, licencia restringida NCh) ────────────
+Nch/*.pdf
+
+# ── Archivos personales ────────────────────────────────────
+habitos.md
+
+# ── Python ────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+
+# ── OS / IDE ──────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ── Claude Code internal ──────────────────────────────────
+.claude/

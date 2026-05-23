@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Muro Albañilería Confinada</title>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --paper: #ffffff;
+      --text: #1f2937;
+      --border: #e5e7eb;
+      --primary: #2563eb;
+      --primary-dark: #1e40af;
+      --accent: #d97706;
+      --danger: #dc2626;
+      --success: #16a34a;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .toolbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 60px;
+      background: #111827;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      z-index: 1000;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+
+    .toolbar h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-export {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.2s;
+    }
+    .btn-export:hover { background: var(--primary-dark); }
+
+    .pages-container {
+      margin-top: 80px;
+      padding-bottom: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .page {
+      width: 297mm;
+      height: 210mm;
+      background: var(--paper);
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
+      page-break-after: always;
+    }
+
+    .page-inner {
+      padding: 15mm;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    .header-left h2 { margin: 0; font-size: 18pt; color: var(--primary-dark); }
+    .header-left p { margin: 4px 0 0; font-size: 10pt; color: #4b5563; }
+    
+    .header-right { text-align: right; }
+    .header-right .logo { font-size: 16pt; font-weight: 900; color: #111; letter-spacing: -1px; }
+    .header-right p { margin: 4px 0 0; font-size: 9pt; color: #6b7280; }
+
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .svg-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px dashed #cbd5e1;
+      background: #f8fafc;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    svg {
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .panel-calculo {
+      position: fixed;
+      top: 80px;
+      left: 20px;
+      width: 340px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      border: 1px solid var(--primary);
+      padding: 20px;
+      overflow-y: auto;
+      max-height: calc(100vh - 100px);
+      z-index: 100;
+    }
+
+    @media print {
+      body { background: white; }
+      .toolbar { display: none; }
+      .panel-calculo { display: none !important; }
+      .pages-container { margin: 0; padding: 0; gap: 0; }
+      .page { box-shadow: none; border: none; }
+      .svg-container { border: none; background: transparent; }
+    }
+
+    @media (max-width: 1400px) {
+      .panel-calculo {
+        position: static;
+        width: 100%;
+        max-width: 297mm;
+        margin: 80px auto 0;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      }
+      .pages-container { margin-top: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <h1>📐 Albañilería Confinada — Planimetría</h1>
+    <div style="display:flex; align-items:center; gap:15px;">
+      <select onchange="if(this.value) window.location.href=this.value" style="padding: 0.5rem; border-radius: 5px; background: #1f2937; color: white; border: 1px solid #374151; cursor: pointer; outline: none;">
+        <option value="muro-albanileria.html" selected>Versión: Albañilería Confinada (Baja Altura)</option>
+        <option value="muro-contencion.html">Versión: Hormigón Armado (Cantiléver)</option>
+        <option value="index.html">Volver a Adosamiento</option>
+      </select>
+      <button class="btn-export" onclick="window.print()">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+        Exportar a PDF
+      </button>
+    </div>
+  </div>
+
+  <div class="panel-calculo no-print">
+    <h3 style="margin-top:0; color:var(--primary-dark); font-size:18px; border-bottom:2px solid var(--primary); padding-bottom:8px;">Calculadora de Albañilería Confinada</h3>
+    <p style="font-size:12px; color:#555; margin-bottom:15px;">Análisis de elementos confinantes bajo empuje lateral de tierras (NCh2123 / ACI318).</p>
+
+    <!-- DIAGRAMAS SVG -->
+    <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-bottom:15px; text-align:center;">
+      <h4 style="margin:0 0 10px 0; font-size:14px; color:#334155;">Diagramas de Fuerzas Internas (Pilar)</h4>
+      <svg width="400" height="180" viewBox="0 0 400 180" style="background:#fff; border:1px solid #e2e8f0; border-radius:4px;">
+        <!-- Muro -->
+        <rect x="20" y="20" width="10" height="120" fill="#e2e8f0" stroke="#94a3b8"/>
+        <!-- Triangulo Empuje Estatico -->
+        <polygon points="30,20 30,140 80,140" fill="rgba(37,99,235,0.2)" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="45" y="155" font-size="10" fill="#1e40af" font-family="Arial">q=5.9 (Est)</text>
+        <!-- Incremento Sismico -->
+        <polygon points="80,140 30,20 100,20 100,140" fill="rgba(245,158,11,0.2)" stroke="#d97706" stroke-width="1.5" stroke-dasharray="2,2"/>
+        <text x="75" y="15" font-size="10" fill="#d97706" font-family="Arial">+Sismo (Kas=0.45)</text>
+        <text x="35" y="10" font-size="11" font-weight="bold" fill="#333">Carga (Ea)</text>
+        
+        <!-- Lineas divisoras -->
+        <line x1="120" y1="10" x2="120" y2="170" stroke="#cbd5e1" stroke-dasharray="4,4"/>
+        
+        <!-- Eje Corte -->
+        <line x1="140" y1="20" x2="140" y2="140" stroke="#94a3b8" stroke-width="1.5"/>
+        <!-- Curva Parabola Corte -->
+        <path d="M 140 20 Q 140 80 190 140 L 140 140 Z" fill="rgba(220,38,38,0.2)" stroke="#dc2626" stroke-width="1.5"/>
+        <!-- Sismo Corte -->
+        <path d="M 140 20 Q 160 80 220 140 L 190 140 Z" fill="rgba(245,158,11,0.2)" stroke="#d97706" stroke-width="1.5" stroke-dasharray="2,2"/>
+        <text x="160" y="155" font-size="10" fill="#991b1b" font-family="Arial">V_max=4.1 kN</text>
+        <text x="150" y="10" font-size="11" font-weight="bold" fill="#333">Corte (V)</text>
+
+        <!-- Lineas divisoras -->
+        <line x1="240" y1="10" x2="240" y2="170" stroke="#cbd5e1" stroke-dasharray="4,4"/>
+
+        <!-- Eje Momento -->
+        <line x1="260" y1="20" x2="260" y2="140" stroke="#94a3b8" stroke-width="1.5"/>
+        <!-- Curva Cubica Momento -->
+        <path d="M 260 20 C 260 80 270 120 330 140 L 260 140 Z" fill="rgba(22,163,74,0.2)" stroke="#16a34a" stroke-width="1.5"/>
+        <!-- Sismo Momento -->
+        <path d="M 260 20 C 270 80 290 120 370 140 L 330 140 Z" fill="rgba(245,158,11,0.2)" stroke="#d97706" stroke-width="1.5" stroke-dasharray="2,2"/>
+        <text x="290" y="155" font-size="10" fill="#065f46" font-family="Arial">M_max=2.05 kNm</text>
+        <text x="270" y="10" font-size="11" font-weight="bold" fill="#333">Momento (M)</text>
+      </svg>
+    </div>
+
+    <!-- CÁLCULO PILARES -->
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:6px; font-size:13px; margin-bottom:15px;">
+      <b style="color:#0f172a; font-size:14px; border-bottom:1px solid #ccc; display:block; padding-bottom:4px; margin-bottom:8px;">1. Verificación Pilar (Flexocompresión)</b>
+      <div style="display:flex; justify-content:space-between;">
+        <div style="width:48%;">
+          <b style="color:#dc2626;">Esfuerzo Actuante</b><br>
+          <i style="font-size:10px; color:#666; line-height:1;">Incluye peso propio e inercia sísmica (Ah=0.3g)</i><br>
+          • M_estático (Ka=0.33) = 0.99 kNm<br>
+          • M_sísmico (Kas=0.45 + Inercia) = 2.05 kNm<br>
+          <div style="margin-top:4px; border-top:1px dashed #ccc; padding-top:4px;">
+            <b>Combinaciones (NCh3171):</b><br>
+            • U1 = 1.6H = 1.58 kNm<br>
+            • U2 = 1.2D + 1.4E = 2.87 kNm<br>
+          </div>
+          <span style="font-weight:bold; color:#dc2626; display:inline-block; margin-top:4px;">→ M_u (Diseño) = 2.87 kNm</span><br>
+          <span style="font-weight:bold; color:#dc2626;">→ V_u (Diseño) = 5.67 kN</span>
+        </div>
+        <div style="width:48%; border-left:1px solid #ccc; padding-left:10px;">
+          <b style="color:#16a34a;">Capacidad (15x15 cm)</b><br>
+          • Acero (4Ø10) As = 1.57 cm²<br>
+          • Hormigón = 25 MPa<br>
+          • Brazo (d-a/2) = 10.0 cm<br>
+          <span style="font-weight:bold; color:#16a34a; display:inline-block; margin-top:4px;">→ φMn (0.9) = 5.91 kNm</span><br>
+          <span style="font-weight:bold; color:#16a34a;">→ φVc (0.75) = 12.1 kN</span>
+        </div>
+      </div>
+      <div style="margin-top:8px; padding-top:8px; border-top:1px dashed #ccc; text-align:center;">
+        <span style="color:#047857; font-weight:bold;">Estado Pilar: CUMPLE ✓ (φMn > M_u) y (φVc > V_u)</span>
+      </div>
+    </div>
+
+    <!-- CÁLCULO CADENA -->
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:6px; font-size:13px; margin-bottom:15px;">
+      <b style="color:#0f172a; font-size:14px; border-bottom:1px solid #ccc; display:block; padding-bottom:4px; margin-bottom:8px;">2. Verificación Cadena Intermedia (Flexión)</b>
+      <p style="margin:0 0 8px 0; color:#555; line-height:1.4;">La cadena actúa como apoyo horizontal para los paños de albañilería, transfiriendo la carga de empuje hacia los pilares.</p>
+      <div style="display:flex; justify-content:space-between;">
+        <div style="width:48%;">
+          <b style="color:#dc2626;">Esfuerzo Actuante</b><br>
+          • Luz libre (L) = 1.0 m<br>
+          • Carga trib. = ~3.0 kN/m<br>
+          • M_nom (qL²/10) = 0.30 kNm<br>
+          <span style="font-weight:bold; color:#dc2626; display:inline-block; margin-top:4px;">→ M_u (1.6x) = 0.48 kNm</span>
+        </div>
+        <div style="width:48%; border-left:1px solid #ccc; padding-left:10px;">
+          <b style="color:#16a34a;">Capacidad (15x15 cm)</b><br>
+          • Acero (4Ø10) As = 1.57 cm²<br>
+          • Similar al pilar vertical<br>
+          <span style="font-weight:bold; color:#16a34a; display:inline-block; margin-top:4px;">→ φMn (0.9) = 5.91 kNm</span>
+        </div>
+      </div>
+      <div style="margin-top:8px; padding-top:8px; border-top:1px dashed #ccc; text-align:center;">
+        <span style="color:#047857; font-weight:bold;">Estado Cadena: CUMPLE ✓ (φMn > Mu)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="pages-container" id="app"></div>
+
+  <script>
+    // Parámetros Geométricos (según croquis)
+    const g = {
+      H_muro: 1.70,     // Altura total del muro (m)
+      H_tierra: 0.70,   // Altura de tierra retenida (vecino) (m)
+      B_zapata: 1.40,   // Ancho zapata (m)
+      H_zapata: 0.20,   // Espesor zapata (m)
+      t_muro: 0.15,     // Espesor muro albañilería (m)
+      L_total: 6.00,    // Largo total (m)
+      
+      pilar_b: 0.15,    // Ancho pilar (m)
+      pilar_h: 0.15,    // Largo pilar (m)
+      pilar_s: 1.00,    // Separación entre pilares (m)
+      
+      cadena_inf_h: 0.20, // Altura cadena inferior (m)
+      cadena_sup_h: 0.20, // Altura cadena superior (m)
+      cadena_int_h: 0.15, // Altura cadena intermedia (m)
+      cadena_int_y: 0.75  // Distancia desde cadena superior a intermedia (m)
+    };
+
+    function renderTransversal() {
+      // SVG paramétrico: Perfil Transversal
+      const w = 900, h = 650;
+      const sc = 200; // Escala (px/m)
+      
+      const px0 = w/2 - (g.B_zapata*sc)/2;
+      const pyBase = h - 90;
+      const pyZapTop = pyBase - g.H_zapata*sc;
+      
+      // Muro centrado en zapata
+      const xMuroL = px0 + (g.B_zapata*sc)/2 - (g.t_muro*sc)/2;
+      const xMuroR = xMuroL + g.t_muro*sc;
+      const yMuroTop = pyZapTop - g.H_muro*sc;
+      
+      const ySueloL = pyZapTop - g.H_tierra*sc; // Vecino (0.7m)
+      // El relleno de grava llega hasta la mitad de la cadena superior
+      const ySueloR = yMuroTop + (g.cadena_sup_h*sc)/2; 
+
+      // Helper de cotas
+      function dimH(x1, x2, y, txt, off=15) {
+        const mid = (x1 + x2) / 2;
+        return `<g stroke="#0055a0" stroke-width="0.8" fill="none">
+          <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}"/>
+          <line x1="${x1}" y1="${y-4}" x2="${x1}" y2="${y+4}"/>
+          <line x1="${x2}" y1="${y-4}" x2="${x2}" y2="${y+4}"/>
+        </g><text x="${mid}" y="${y+off}" text-anchor="middle" fill="#0055a0" font-size="10" font-family="Arial">${txt}</text>`;
+      }
+      function dimV(x, y1, y2, txt) {
+        const mid = (y1 + y2) / 2;
+        return `<g stroke="#0055a0" stroke-width="0.8" fill="none">
+          <line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}"/>
+          <line x1="${x-4}" y1="${y1}" x2="${x+4}" y2="${y1}"/>
+          <line x1="${x-4}" y1="${y2}" x2="${x+4}" y2="${y2}"/>
+        </g><text x="${x+7}" y="${mid+4}" fill="#0055a0" font-size="10" font-family="Arial">${txt}</text>`;
+      }
+
+      return `<svg viewBox="0 0 ${w} ${h}">
+        <defs>
+          <pattern id="brick" patternUnits="userSpaceOnUse" width="40" height="18">
+            <rect width="40" height="18" fill="#e28743" stroke="#fff" stroke-width="1.5"/>
+            <line x1="20" y1="0" x2="20" y2="9" stroke="#fff" stroke-width="1.5"/>
+            <line x1="0" y1="9" x2="40" y2="9" stroke="#fff" stroke-width="1.5"/>
+            <line x1="0" y1="9" x2="0" y2="18" stroke="#fff" stroke-width="1.5"/>
+          </pattern>
+          <pattern id="concrete" patternUnits="userSpaceOnUse" width="12" height="12">
+            <rect width="12" height="12" fill="#d1d5db"/>
+            <circle cx="3" cy="3" r="1" fill="#9ca3af"/>
+            <circle cx="9" cy="8" r="1.5" fill="#9ca3af"/>
+            <circle cx="4" cy="10" r="0.8" fill="#6b7280"/>
+          </pattern>
+          <pattern id="gravel" patternUnits="userSpaceOnUse" width="20" height="20">
+            <circle cx="5" cy="5" r="3" fill="#9ca3af" opacity="0.6"/>
+            <circle cx="15" cy="8" r="4" fill="#6b7280" opacity="0.5"/>
+            <circle cx="8" cy="16" r="3.5" fill="#d1d5db" opacity="0.7"/>
+          </pattern>
+          <pattern id="soil" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="10" stroke="#a3e635" stroke-width="1" opacity="0.5"/>
+          </pattern>
+        </defs>
+        
+        <rect width="${w}" height="${h}" fill="#f8fafc"/>
+        
+        <!-- Suelo Vecino (izq) -->
+        <rect x="50" y="${ySueloL}" width="${xMuroL-50}" height="${pyBase+40-ySueloL}" fill="url(#soil)"/>
+        <line x1="50" y1="${ySueloL}" x2="${xMuroL}" y2="${ySueloL}" stroke="#4d7c0f" stroke-width="2" stroke-dasharray="8,4"/>
+        <text x="60" y="${ySueloL - 10}" fill="#4d7c0f" font-family="Arial" font-size="11" font-weight="bold">NIVEL SUELO VECINO</text>
+        
+        <!-- Relleno (der) - Solo 50cm de grava, resto terreno natural -->
+        <!-- Terreno natural a la derecha de la grava -->
+        <rect x="${xMuroR + 0.50*sc}" y="${ySueloR}" width="${w-(xMuroR+0.50*sc)-50}" height="${pyBase+40-ySueloR}" fill="url(#soil)"/>
+        <!-- Grava (50cm pegada al muro) -->
+        <rect x="${xMuroR}" y="${ySueloR}" width="${0.50*sc}" height="${pyBase+40-ySueloR}" fill="url(#gravel)"/>
+        <line x1="${xMuroR}" y1="${ySueloR}" x2="${w-50}" y2="${ySueloR}" stroke="#475569" stroke-width="2"/>
+        <text x="${w-60}" y="${ySueloR - 10}" fill="#475569" text-anchor="end" font-family="Arial" font-size="11" font-weight="bold">TERRENO NATURAL / RELLENO</text>
+        <text x="${xMuroR + 0.25*sc}" y="${ySueloR + 30}" fill="#475569" text-anchor="middle" font-family="Arial" font-size="9" font-weight="bold" transform="rotate(-90 ${xMuroR + 0.25*sc} ${ySueloR + 30})">GRAVA (50cm)</text>
+        
+        <!-- Zapata -->
+        <rect x="${px0}" y="${pyZapTop}" width="${g.B_zapata*sc}" height="${g.H_zapata*sc}" fill="url(#concrete)" stroke="#374151" stroke-width="2"/>
+        <!-- Armadura Zapata -->
+        <rect x="${px0+10}" y="${pyBase-25}" width="${g.B_zapata*sc-20}" height="10" fill="none" stroke="#dc2626" stroke-width="2.5"/>
+        <text x="${px0+15}" y="${pyBase-30}" fill="#dc2626" font-family="Arial" font-size="9" font-weight="bold">Malla Base Ø10@20</text>
+        
+        <!-- Albañilería (Muro) -->
+        <rect x="${xMuroL}" y="${yMuroTop + g.cadena_sup_h*sc}" width="${g.t_muro*sc}" height="${(g.H_muro - g.cadena_sup_h)*sc}" fill="url(#brick)" stroke="#9a3412" stroke-width="2"/>
+        
+        <!-- Cadena Superior -->
+        <rect x="${xMuroL}" y="${yMuroTop}" width="${g.t_muro*sc}" height="${g.cadena_sup_h*sc}" fill="url(#concrete)" stroke="#374151" stroke-width="2"/>
+        <!-- Armadura Cadena Sup -->
+        <rect x="${xMuroL+6}" y="${yMuroTop+6}" width="${g.t_muro*sc-12}" height="${g.cadena_sup_h*sc-12}" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+        <circle cx="${xMuroL+9}" cy="${yMuroTop+9}" r="2" fill="#2563eb"/><circle cx="${xMuroR-9}" cy="${yMuroTop+9}" r="2" fill="#2563eb"/>
+        <circle cx="${xMuroL+9}" cy="${yMuroTop+g.cadena_sup_h*sc-9}" r="2" fill="#2563eb"/><circle cx="${xMuroR-9}" cy="${yMuroTop+g.cadena_sup_h*sc-9}" r="2" fill="#2563eb"/>
+        
+        <!-- Cadena Intermedia (Chorizo) a 75cm de arriba -->
+        <rect x="${xMuroL}" y="${yMuroTop + g.cadena_int_y*sc}" width="${g.t_muro*sc}" height="${g.cadena_int_h*sc}" fill="url(#concrete)" stroke="#374151" stroke-width="2"/>
+        <!-- Armadura Cadena Int -->
+        <rect x="${xMuroL+6}" y="${yMuroTop + g.cadena_int_y*sc + 6}" width="${g.t_muro*sc-12}" height="${g.cadena_int_h*sc-12}" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+        
+        <!-- Pilar/Armadura Vertical (en corte no se ve el pilar entero a menos que coincida, mostraremos armadura vertical punteada) -->
+        <line x1="${xMuroL+9}" y1="${pyZapTop}" x2="${xMuroL+9}" y2="${yMuroTop+5}" stroke="#2563eb" stroke-width="2" stroke-dasharray="5,3"/>
+        <line x1="${xMuroR-9}" y1="${pyZapTop}" x2="${xMuroR-9}" y2="${yMuroTop+5}" stroke="#2563eb" stroke-width="2" stroke-dasharray="5,3"/>
+
+        <!-- Pandereta -->
+        <rect x="${xMuroR + 0.30*sc}" y="${ySueloR - 140}" width="8" height="140" fill="#e5e7eb" stroke="#9ca3af" stroke-width="1.5"/>
+        <text x="${xMuroR + 0.30*sc + 12}" y="${ySueloR - 70}" fill="#6b7280" font-family="Arial" font-size="10" font-weight="bold">PANDERETA</text>
+        <line x1="${xMuroR}" y1="${ySueloR - 10}" x2="${xMuroR + 0.30*sc}" y2="${ySueloR - 10}" stroke="#6b7280" stroke-width="1" stroke-dasharray="3,3"/>
+        <text x="${xMuroR + 0.15*sc}" y="${ySueloR - 15}" text-anchor="middle" font-size="9" fill="#6b7280">30 cm</text>
+        
+        <!-- Barbacana (Drenaje) con pendiente de derecha (alto) a izquierda (bajo) -->
+        <line x1="${xMuroL - 15}" y1="${yMuroTop + g.cadena_int_y*sc + (g.cadena_int_h*sc)/2 + 8}" x2="${xMuroR + 15}" y2="${yMuroTop + g.cadena_int_y*sc + (g.cadena_int_h*sc)/2 - 8}" stroke="#1e293b" stroke-width="5"/>
+        <line x1="${xMuroL - 15}" y1="${yMuroTop + g.cadena_int_y*sc + (g.cadena_int_h*sc)/2 + 8}" x2="${xMuroR + 15}" y2="${yMuroTop + g.cadena_int_y*sc + (g.cadena_int_h*sc)/2 - 8}" stroke="#94a3b8" stroke-width="2"/>
+        <text x="${xMuroR + 20}" y="${yMuroTop + g.cadena_int_y*sc + (g.cadena_int_h*sc)/2 + 4}" fill="#334155" font-family="Arial" font-size="9" font-weight="bold">Barbacana PVC Ø75mm (Pendiente 3%)</text>
+        
+        <!-- Cotas Horizontales -->
+        ${dimH(px0, xMuroL, pyBase+25, '70 cm')}
+        ${dimH(xMuroL, xMuroR, pyBase+25, '15 cm')}
+        ${dimH(xMuroR, px0 + g.B_zapata*sc, pyBase+25, '70 cm')}
+        ${dimH(px0, px0 + g.B_zapata*sc, pyBase+55, '1.40 mts')}
+        
+        <!-- Cotas Verticales -->
+        ${dimV(xMuroL-40, pyZapTop, ySueloL, '70 cm')}
+        ${dimV(px0-30, pyZapTop, pyBase, '20 cm')}
+        ${dimV(xMuroR+40, yMuroTop+g.cadena_int_y*sc, pyZapTop, '80 cm')}
+        ${dimV(xMuroR+40, yMuroTop, yMuroTop+g.cadena_int_y*sc, '75 cm')}
+        ${dimV(xMuroR+75, yMuroTop, pyZapTop, '1.70 mts')}
+        
+        <text x="${w/2}" y="30" text-anchor="middle" font-family="Arial" font-size="14" font-weight="bold" fill="#1e293b">PERFIL TRANSVERSAL — ALBAÑILERÍA CONFINADA</text>
+      </svg>`;
+    }
+
+    function renderElevacion() {
+      const w = 1000, h = 600;
+      const sc = 140; // Escala (px/m) para que quepan los 6m
+      
+      const px0 = w/2 - (g.L_total*sc)/2;
+      const pyBase = h - 120;
+      const pyZapTop = pyBase - g.H_zapata*sc;
+      const pyMuroTop = pyZapTop - g.H_muro*sc;
+      
+      // Función para cotas
+      function dimH(x1, x2, y, txt, off=15) {
+        const mid = (x1 + x2) / 2;
+        return `<g stroke="#0055a0" stroke-width="0.8" fill="none">
+          <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}"/>
+          <line x1="${x1}" y1="${y-4}" x2="${x1}" y2="${y+4}"/>
+          <line x1="${x2}" y1="${y-4}" x2="${x2}" y2="${y+4}"/>
+        </g><text x="${mid}" y="${y+off}" text-anchor="middle" fill="#0055a0" font-size="10" font-family="Arial">${txt}</text>`;
+      }
+      function dimV(x, y1, y2, txt) {
+        const mid = (y1 + y2) / 2;
+        return `<g stroke="#0055a0" stroke-width="0.8" fill="none">
+          <line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}"/>
+          <line x1="${x-4}" y1="${y1}" x2="${x+4}" y2="${y1}"/>
+          <line x1="${x-4}" y1="${y2}" x2="${x+4}" y2="${y2}"/>
+        </g><text x="${x+7}" y="${mid+4}" fill="#0055a0" font-size="10" font-family="Arial">${txt}</text>`;
+      }
+
+      // Generar pilares
+      const numPilares = Math.floor(g.L_total / g.pilar_s) + 1;
+      let pilaresSVG = '';
+      let cotasSVG = '';
+      
+      for(let i=0; i<numPilares; i++) {
+        const xP = px0 + i * g.pilar_s * sc;
+        // Pilar de 15x15
+        const pW = g.pilar_b * sc;
+        // Compensamos el ancho para que queden centrados en los ejes, excepto los bordes que van a filo
+        let xDraw = xP - pW/2;
+        if(i === 0) xDraw = px0; // Filo izquierdo
+        if(i === numPilares - 1) xDraw = px0 + g.L_total*sc - pW; // Filo derecho
+        
+        pilaresSVG += `<rect x="${xDraw}" y="${pyMuroTop}" width="${pW}" height="${g.H_muro*sc}" fill="url(#concrete)" stroke="#374151" stroke-width="1.5"/>`;
+        
+        // Etiqueta pilar (sólo en el primero y último para no saturar)
+        if(i===0 || i===numPilares-1) {
+          pilaresSVG += `<text x="${xDraw+pW/2}" y="${pyMuroTop - 15}" fill="#1e293b" font-family="Arial" font-size="9" text-anchor="middle" font-weight="bold">PILAR 15x15</text>
+          <line x1="${xDraw+pW/2}" y1="${pyMuroTop-12}" x2="${xDraw+pW/2}" y2="${pyMuroTop}" stroke="#1e293b" stroke-width="1"/>`;
+        }
+        
+        if (i < numPilares - 1) {
+          cotasSVG += dimH(xP, xP + g.pilar_s*sc, pyBase + 30, '1.00m');
+          
+          // Barbacana en el centro del paño, altura de cadena intermedia
+          const cx = xP + (g.pilar_s*sc)/2;
+          const cy = pyMuroTop + g.cadena_int_y*sc + (g.cadena_int_h*sc)/2;
+          pilaresSVG += `<circle cx="${cx}" cy="${cy}" r="6" fill="#1e293b" stroke="#94a3b8" stroke-width="2"/>`;
+          pilaresSVG += `<text x="${cx}" y="${cy - 12}" text-anchor="middle" fill="#334155" font-family="Arial" font-size="8" font-weight="bold">Barbacana PVC Ø75</text>`;
+        }
+      }
+
+      // Dibujar paños de albañilería detrás de las cadenas/pilares (fondo)
+      const brickFill = `<rect x="${px0}" y="${pyMuroTop}" width="${g.L_total*sc}" height="${g.H_muro*sc}" fill="url(#brick)" stroke="#9a3412" stroke-width="1"/>`;
+
+      return `<svg viewBox="0 0 ${w} ${h}">
+        <!-- Defs se reutilizan de transversal en el DOM, o las redefinimos aquí si el SVG es independiente -->
+        <defs>
+          <pattern id="brick2" patternUnits="userSpaceOnUse" width="40" height="18">
+            <rect width="40" height="18" fill="#e28743" stroke="#fff" stroke-width="1.5"/>
+            <line x1="20" y1="0" x2="20" y2="9" stroke="#fff" stroke-width="1.5"/>
+            <line x1="0" y1="9" x2="40" y2="9" stroke="#fff" stroke-width="1.5"/>
+            <line x1="0" y1="9" x2="0" y2="18" stroke="#fff" stroke-width="1.5"/>
+          </pattern>
+          <pattern id="concrete2" patternUnits="userSpaceOnUse" width="12" height="12">
+            <rect width="12" height="12" fill="#d1d5db"/>
+            <circle cx="3" cy="3" r="1" fill="#9ca3af"/>
+            <circle cx="9" cy="8" r="1.5" fill="#9ca3af"/>
+          </pattern>
+        </defs>
+
+        <!-- Albañilería de fondo -->
+        ${brickFill}
+        
+        <!-- Pilares -->
+        ${pilaresSVG}
+        
+        <!-- Cadena Superior 15x20 -->
+        <rect x="${px0}" y="${pyMuroTop}" width="${g.L_total*sc}" height="${g.cadena_sup_h*sc}" fill="url(#concrete2)" stroke="#374151" stroke-width="1.5"/>
+        <text x="${px0 + g.L_total*sc/2}" y="${pyMuroTop + 14}" fill="#1e293b" font-family="Arial" font-size="10" text-anchor="middle" font-weight="bold">CADENA SUPERIOR 15x20</text>
+        
+        <!-- Cadena Intermedia 15x15 (Chorizo) -->
+        <rect x="${px0}" y="${pyMuroTop + g.cadena_int_y*sc}" width="${g.L_total*sc}" height="${g.cadena_int_h*sc}" fill="url(#concrete2)" stroke="#374151" stroke-width="1.5"/>
+        <text x="${px0 + g.L_total*sc/2}" y="${pyMuroTop + g.cadena_int_y*sc + 12}" fill="#1e293b" font-family="Arial" font-size="10" text-anchor="middle" font-weight="bold">CADENA INTERMEDIA (CHORIZO) 15x15</text>
+        
+        <!-- Cadena Inferior (Base) 15x20 (Representada asomando o como zapata visible) -->
+        <rect x="${px0 - 10}" y="${pyZapTop}" width="${g.L_total*sc + 20}" height="${g.H_zapata*sc}" fill="url(#concrete2)" stroke="#374151" stroke-width="2"/>
+        <text x="${px0 + g.L_total*sc/2}" y="${pyZapTop + 16}" fill="#1e293b" font-family="Arial" font-size="10" text-anchor="middle" font-weight="bold">CADENA INFERIOR (FUNDACIÓN) 15x20 (Dentro de zapata)</text>
+        
+        <!-- Cotas -->
+        ${cotasSVG}
+        ${dimH(px0, px0 + g.L_total*sc, pyBase + 60, 'Largo Total = 6.00 mts')}
+        
+        ${dimV(px0 - 35, pyMuroTop + g.cadena_int_y*sc, pyZapTop, '80 cm')}
+        ${dimV(px0 - 35, pyMuroTop, pyMuroTop + g.cadena_int_y*sc, '75 cm')}
+        ${dimV(px0 - 70, pyMuroTop, pyZapTop, '1.70 mts')}
+        
+        <text x="${w/2}" y="30" text-anchor="middle" font-family="Arial" font-size="14" font-weight="bold" fill="#1e293b">ELEVACIÓN — MIRADO DE LADO</text>
+      </svg>`;
+    }
+
+    function renderPlanta() {
+      const w = 1000, h = 400;
+      const sc = 140; // Escala (px/m)
+      
+      const px0 = w/2 - (g.L_total*sc)/2;
+      const py0 = h/2 - (g.B_zapata*sc)/2;
+      
+      const numPilares = Math.floor(g.L_total / g.pilar_s) + 1;
+      
+      let gridSVG = '';
+      
+      // Dibujar cadenas longitudinales (ejes de la zapata)
+      // El esquema a mano muestra 3 líneas longitudinales a lo largo de los 6m.
+      const yL_top = py0 + 10;
+      const yL_mid = py0 + (g.B_zapata*sc)/2;
+      const yL_bot = py0 + g.B_zapata*sc - 10;
+      
+      gridSVG += `<line x1="${px0}" y1="${yL_top}" x2="${px0 + g.L_total*sc}" y2="${yL_top}" stroke="#2563eb" stroke-width="4"/>`;
+      gridSVG += `<line x1="${px0}" y1="${yL_mid}" x2="${px0 + g.L_total*sc}" y2="${yL_mid}" stroke="#2563eb" stroke-width="4"/>`;
+      gridSVG += `<line x1="${px0}" y1="${yL_bot}" x2="${px0 + g.L_total*sc}" y2="${yL_bot}" stroke="#2563eb" stroke-width="4"/>`;
+      // Estribos/escalerilla para las cadenas longitudinales
+      for(let j=0; j<g.L_total*5; j++) {
+        const xEst = px0 + j*(sc/5);
+        gridSVG += `<line x1="${xEst}" y1="${yL_top-3}" x2="${xEst}" y2="${yL_top+3}" stroke="#1d4ed8" stroke-width="1.5"/>`;
+        gridSVG += `<line x1="${xEst}" y1="${yL_mid-3}" x2="${xEst}" y2="${yL_mid+3}" stroke="#1d4ed8" stroke-width="1.5"/>`;
+        gridSVG += `<line x1="${xEst}" y1="${yL_bot-3}" x2="${xEst}" y2="${yL_bot+3}" stroke="#1d4ed8" stroke-width="1.5"/>`;
+      }
+
+      // Dibujar cadenas transversales (saliendo de los pilares hacia los bordes)
+      for(let i=0; i<numPilares; i++) {
+        const xP = px0 + i * g.pilar_s * sc;
+        gridSVG += `<line x1="${xP}" y1="${py0}" x2="${xP}" y2="${py0 + g.B_zapata*sc}" stroke="#dc2626" stroke-width="4"/>`;
+        // Estribos/escalerilla de las cadenas transversales
+        for(let j=0; j<g.B_zapata*5; j++) {
+          const yEst = py0 + j*(sc/5);
+          gridSVG += `<line x1="${xP-4}" y1="${yEst}" x2="${xP+4}" y2="${yEst}" stroke="#b91c1c" stroke-width="1.5"/>`;
+        }
+      }
+
+      // Pilares (Mirados desde arriba)
+      let pilaresSVG = '';
+      const pW = g.pilar_b * sc;
+      const pH = g.pilar_h * sc;
+      // Posición Y central
+      const yP = h/2 - pH/2;
+
+      for(let i=0; i<numPilares; i++) {
+        const xP = px0 + i * g.pilar_s * sc;
+        let xDraw = xP - pW/2;
+        if(i === 0) xDraw = px0;
+        if(i === numPilares - 1) xDraw = px0 + g.L_total*sc - pW;
+        
+        pilaresSVG += `<rect x="${xDraw}" y="${yP}" width="${pW}" height="${pH}" fill="#1f2937" stroke="#000" stroke-width="2"/>`;
+        // Armadura del pilar (4 puntitos)
+        pilaresSVG += `
+          <circle cx="${xDraw+3}" cy="${yP+3}" r="1.5" fill="#fff"/>
+          <circle cx="${xDraw+pW-3}" cy="${yP+3}" r="1.5" fill="#fff"/>
+          <circle cx="${xDraw+3}" cy="${yP+pH-3}" r="1.5" fill="#fff"/>
+          <circle cx="${xDraw+pW-3}" cy="${yP+pH-3}" r="1.5" fill="#fff"/>
+        `;
+      }
+
+      function dimH(x1, x2, y, txt) {
+        const mid = (x1 + x2) / 2;
+        return `<g stroke="#0055a0" stroke-width="0.8" fill="none">
+          <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}"/>
+          <line x1="${x1}" y1="${y-4}" x2="${x1}" y2="${y+4}"/>
+          <line x1="${x2}" y1="${y-4}" x2="${x2}" y2="${y+4}"/>
+        </g><text x="${mid}" y="${y+12}" text-anchor="middle" fill="#0055a0" font-size="10" font-family="Arial">${txt}</text>`;
+      }
+      function dimV(x, y1, y2, txt) {
+        const mid = (y1 + y2) / 2;
+        return `<g stroke="#0055a0" stroke-width="0.8" fill="none">
+          <line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}"/>
+          <line x1="${x-4}" y1="${y1}" x2="${x+4}" y2="${y1}"/>
+          <line x1="${x-4}" y1="${y2}" x2="${x+4}" y2="${y2}"/>
+        </g><text x="${x+7}" y="${mid+4}" fill="#0055a0" font-size="10" font-family="Arial">${txt}</text>`;
+      }
+
+      return `<svg viewBox="0 0 ${w} ${h}">
+        <rect width="${w}" height="${h}" fill="#f8fafc"/>
+        
+        <!-- Contorno Zapata -->
+        <rect x="${px0}" y="${py0}" width="${g.L_total*sc}" height="${g.B_zapata*sc}" fill="#e5e7eb" stroke="#374151" stroke-width="2"/>
+        
+        <!-- Grilla de armadura -->
+        ${gridSVG}
+        
+        <!-- Muro (Línea central punteada o sombreada) -->
+        <rect x="${px0}" y="${h/2 - (g.t_muro*sc)/2}" width="${g.L_total*sc}" height="${g.t_muro*sc}" fill="rgba(200,200,200,0.6)" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="4"/>
+        
+        <!-- Pilares -->
+        ${pilaresSVG}
+        
+        <!-- Notas -->
+        <text x="${px0+10}" y="${py0-15}" fill="#111827" font-family="Arial" font-size="10" font-weight="bold">Armadura: Cadenas transversales en cada pilar y 3 longitudinales (según croquis)</text>
+        <text x="${px0 + g.L_total*sc - 10}" y="${py0-15}" text-anchor="end" fill="#111827" font-family="Arial" font-size="10" font-weight="bold">Pilares 15x15 cm espaciados a 1.00 m</text>
+        
+        <!-- Cotas -->
+        ${dimH(px0, px0 + g.L_total*sc, py0 + g.B_zapata*sc + 25, 'Largo = 6.00 mts')}
+        ${dimV(px0 - 25, py0, py0 + g.B_zapata*sc, 'Ancho Terreno = 1.40 mts')}
+        
+        <text x="${w/2}" y="25" text-anchor="middle" font-family="Arial" font-size="14" font-weight="bold" fill="#1e293b">PLANTA DE FUNDACIÓN — ESTRUCTURA MIRADA DE ARRIBA</text>
+      </svg>`;
+    }
+
+    function renderDetallePilar() {
+      const w = 900, h = 650;
+      const sc = 200; // pixels per meter
+      const px0 = w/2 - (0.15*sc)/2; // center x
+      const py0 = 80; // top y
+      const pW = 0.15*sc;
+      const pH = g.H_muro*sc;
+      const zH = g.H_zapata*sc;
+      
+      let svg = `<svg viewBox="0 0 ${w} ${h}">
+        <rect width="${w}" height="${h}" fill="#f8fafc"/>
+        <text x="${w/2}" y="35" text-anchor="middle" font-family="Arial" font-size="16" font-weight="bold" fill="#1e293b">DETALLE DE ARMADURA — PILAR 15x15 (Aislado)</text>
+        
+        <!-- Zapata Background -->
+        <rect x="${w/2 - 1.2*sc/2}" y="${py0 + pH}" width="${1.2*sc}" height="${zH}" fill="#e5e7eb" stroke="#374151" stroke-width="1" stroke-dasharray="2"/>
+        <text x="${w/2 + 1.2*sc/2 + 10}" y="${py0 + pH + zH/2 + 4}" font-family="Arial" font-size="12" fill="#374151">Hormigón Zapata (H25)</text>
+
+        <!-- Pilar Concrete Outline -->
+        <rect x="${px0}" y="${py0}" width="${pW}" height="${pH}" fill="rgba(200,200,200,0.3)" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="4"/>
+        <text x="${px0 + pW/2}" y="${py0 + pH/2}" text-anchor="middle" transform="rotate(-90 ${px0 + pW/2} ${py0 + pH/2})" fill="#4b5563" font-family="Arial" font-size="14" font-weight="bold" opacity="0.3">SECCIÓN HORMIGÓN 15x15</text>
+        
+        <!-- Longitudinal Rebar (left and right to represent 4 bars) -->
+        <!-- Left bars -->
+        <path d="M ${px0 + 6} ${py0 - 15} L ${px0 + 6} ${py0 + pH + zH - 10} L ${px0 + 35} ${py0 + pH + zH - 10}" fill="none" stroke="#b91c1c" stroke-width="3"/>
+        <!-- Right bars -->
+        <path d="M ${px0 + pW - 6} ${py0 - 15} L ${px0 + pW - 6} ${py0 + pH + zH - 10} L ${px0 + pW - 35} ${py0 + pH + zH - 10}" fill="none" stroke="#b91c1c" stroke-width="3"/>
+        
+        <!-- Stirrups (Estribos) -->
+        <g stroke="#1d4ed8" stroke-width="2" fill="none">`;
+        
+      const numStirrups = Math.floor(g.H_muro / 0.15);
+      for(let i=0; i<=numStirrups; i++) {
+        const yE = py0 + i * (0.15*sc);
+        svg += `<line x1="${px0 - 4}" y1="${yE}" x2="${px0 + pW + 4}" y2="${yE}"/>`;
+      }
+        
+      svg += `</g>
+        
+        <!-- Callouts -->
+        <!-- Longitudinal -->
+        <line x1="${px0 + pW}" y1="${py0 + 60}" x2="${px0 + pW + 80}" y2="${py0 + 30}" stroke="#b91c1c" stroke-width="1"/>
+        <text x="${px0 + pW + 85}" y="${py0 + 30}" fill="#b91c1c" font-family="Arial" font-size="12" font-weight="bold">4Ø10 mm (Acero Longitudinal)</text>
+        <text x="${px0 + pW + 85}" y="${py0 + 45}" fill="#7f1d1d" font-family="Arial" font-size="10">Largo Total Corte = 2.30 m (incluye ganchos)</text>
+        
+        <!-- Stirrups -->
+        <line x1="${px0 - 4}" y1="${py0 + 120}" x2="${px0 - 60}" y2="${py0 + 90}" stroke="#1d4ed8" stroke-width="1"/>
+        <text x="${px0 - 65}" y="${py0 + 85}" text-anchor="end" fill="#1d4ed8" font-family="Arial" font-size="12" font-weight="bold">Estribos Ø6 @ 15cm</text>
+        <text x="${px0 - 65}" y="${py0 + 100}" text-anchor="end" fill="#1e3a8a" font-family="Arial" font-size="10">Amarre sísmico 135°</text>
+        
+        <!-- Hook/Anchorage -->
+        <circle cx="${px0 + 6}" cy="${py0 + pH + zH - 10}" r="4" fill="#b91c1c"/>
+        <line x1="${px0 + 6}" y1="${py0 + pH + zH - 10}" x2="${px0 - 50}" y2="${py0 + pH + zH + 20}" stroke="#b91c1c" stroke-width="1"/>
+        <text x="${px0 - 55}" y="${py0 + pH + zH + 25}" text-anchor="end" fill="#b91c1c" font-family="Arial" font-size="12" font-weight="bold">Anclaje en Zapata (Empalme)</text>
+        <text x="${px0 - 55}" y="${py0 + pH + zH + 40}" text-anchor="end" fill="#7f1d1d" font-family="Arial" font-size="10">Longitud de desarrollo pata = 20cm mín.</text>
+
+        <!-- Dimension Lines -->
+        <g stroke="#0055a0" stroke-width="0.8" fill="none">
+          <line x1="${px0 - 150}" y1="${py0}" x2="${px0 - 150}" y2="${py0 + pH}"/>
+          <line x1="${px0 - 155}" y1="${py0}" x2="${px0 - 145}" y2="${py0}"/>
+          <line x1="${px0 - 155}" y1="${py0 + pH}" x2="${px0 - 145}" y2="${py0 + pH}"/>
+        </g>
+        <text x="${px0 - 160}" y="${py0 + pH/2}" text-anchor="end" fill="#0055a0" font-family="Arial" font-size="12">Altura Pilar = 1.70 m</text>
+        
+        <g stroke="#0055a0" stroke-width="0.8" fill="none">
+          <line x1="${px0 - 150}" y1="${py0 + pH}" x2="${px0 - 150}" y2="${py0 + pH + zH}"/>
+          <line x1="${px0 - 155}" y1="${py0 + pH + zH}" x2="${px0 - 145}" y2="${py0 + pH + zH}"/>
+        </g>
+        <text x="${px0 - 160}" y="${py0 + pH + zH/2 + 5}" text-anchor="end" fill="#0055a0" font-family="Arial" font-size="12">Zapata = 0.20 m</text>
+
+        <g stroke="#0055a0" stroke-width="0.8" fill="none">
+          <line x1="${px0}" y1="${py0 - 30}" x2="${px0 + pW}" y2="${py0 - 30}"/>
+          <line x1="${px0}" y1="${py0 - 35}" x2="${px0}" y2="${py0 - 25}"/>
+          <line x1="${px0 + pW}" y1="${py0 - 35}" x2="${px0 + pW}" y2="${py0 - 25}"/>
+        </g>
+        <text x="${px0 + pW/2}" y="${py0 - 40}" text-anchor="middle" fill="#0055a0" font-family="Arial" font-size="12">15 cm</text>
+
+      </svg>`;
+      return svg;
+    }
+
+    const app = document.getElementById('app');
+
+    app.innerHTML = `
+      <div class="page">
+        <div class="page-inner">
+          <div class="header">
+            <div class="header-left">
+              <h2>Muro Albañilería Confinada — H=1.70m</h2>
+              <p>Perfil Transversal y Dimensionamiento</p>
+            </div>
+            <div class="header-right">
+              <div class="logo">LAYEL</div>
+              <p>Ingeniería Estructural</p>
+            </div>
+          </div>
+          <div class="content">
+            <div class="svg-container">
+              ${renderTransversal()}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="page">
+        <div class="page-inner">
+          <div class="header">
+            <div class="header-left">
+              <h2>Muro Albañilería Confinada — L=6.00m</h2>
+              <p>Elevación y Disposición de Pilares</p>
+            </div>
+            <div class="header-right">
+              <div class="logo">LAYEL</div>
+            </div>
+          </div>
+          <div class="content">
+            <div class="svg-container">
+              ${renderElevacion()}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="page">
+        <div class="page-inner">
+          <div class="header">
+            <div class="header-left">
+              <h2>Muro Albañilería Confinada</h2>
+              <p>Planta de Fundación (Grilla 70x70)</p>
+            </div>
+            <div class="header-right">
+              <div class="logo">LAYEL</div>
+            </div>
+          </div>
+          <div class="content">
+            <div class="svg-container">
+              ${renderPlanta()}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="page">
+        <div class="page-inner">
+          <div class="header">
+            <div class="header-left">
+              <h2>Muro Albañilería Confinada</h2>
+              <p>Detalle de Armadura Pilar (15x15 cm)</p>
+            </div>
+            <div class="header-right">
+              <div class="logo">LAYEL</div>
+            </div>
+          </div>
+          <div class="content">
+            <div class="svg-container">
+              ${renderDetallePilar()}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page">
+        <div class="page-inner">
+          <div class="header">
+            <div class="header-left">
+              <h2>Muro Albañilería Confinada</h2>
+              <p>Cubicación Estimada de Materiales</p>
+            </div>
+            <div class="header-right">
+              <div class="logo">LAYEL</div>
+            </div>
+          </div>
+          <div class="content" style="padding: 20px;">
+            <style>
+              .table-materials {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+              }
+              .table-materials th, .table-materials td {
+                border: 1px solid #cbd5e1;
+                padding: 12px;
+                text-align: left;
+              }
+              .table-materials th {
+                background: #f1f5f9;
+                font-weight: bold;
+                color: #0f172a;
+              }
+            </style>
+            <p style="font-size:13px; color:#475569; margin-bottom:15px;">Cantidades calculadas para un paño continuo de <strong>L = 6.00 m</strong> de longitud y <strong>H = 1.00 m</strong> de contención efectiva, considerando pérdidas por despuntes y traslapes normativos.</p>
+            <table class="table-materials">
+              <thead>
+                <tr>
+                  <th>Elemento / Partida</th>
+                  <th>Especificación Técnica</th>
+                  <th>Cantidad Total</th>
+                  <th>Detalle de Cálculo y Pérdidas</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Zapata de Fundación</strong></td>
+                  <td>Hormigón H25 (f'c=25 MPa)<br><span style="font-size:11px; color:#64748b;">Nivel de Confianza 90%, Árido 20mm</span></td>
+                  <td><strong>1.76 m³</strong></td>
+                  <td><span style="font-size:11px;">(1.40m × 0.20m × 6.00m) = 1.68 m³<br>+ 5% pérdida por compactación y nivelación.</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Hormigón Pilares y Cadenas</strong></td>
+                  <td>Hormigón H25 (f'c=25 MPa)<br><span style="font-size:11px; color:#64748b;">Árido max 12mm (para facilitar llenado)</span></td>
+                  <td><strong>0.63 m³</strong></td>
+                  <td><span style="font-size:11px;">7 Pilares (15x15x1.70m) = 0.268 m³<br>Cadenas Int y Sup (15x15 y 15x20) = 0.315 m³<br>+ 8% pérdida (derrames en moldaje reducido).</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Albañilería (Muro)</strong></td>
+                  <td>Ladrillo Fiscal o Titán<br><span style="font-size:11px; color:#64748b;">(28.5 × 14.0 × 4.5 cm) Asentado de soga (15cm)</span></td>
+                  <td><strong>~390 unid.</strong></td>
+                  <td><span style="font-size:11px;">Área bruta = 10.20 m² | Área neta (sin H.A.) = 6.68 m²<br>Rendimiento = 55.5 ladrillos/m² (Mortero 1.5cm)<br>Subtotal = 371 unid. + <strong>5% despunte y roturas</strong>.</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Mortero de Pega</strong></td>
+                  <td>Mortero Predosificado H10<br><span style="font-size:11px; color:#64748b;">Proporción 1:3 o 1:4 (cemento:arena)</span></td>
+                  <td><strong>0.22 m³</strong></td>
+                  <td><span style="font-size:11px;">Volumen aproximado de llagas y tendeles para 6.68 m² de albañilería (espesor 1.5 cm) + 10% pérdida.</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Acero Longitudinal (Armadura)</strong></td>
+                  <td>Acero A630-420H (Grado 60)<br><span style="font-size:11px; color:#64748b;">Barras de Ø10mm estriadas</span></td>
+                  <td><strong>140.0 kg</strong></td>
+                  <td><span style="font-size:11px;">Zapata (12 barrasx6.0m=72m) + Pilares (28x2.3m=64.4m) + Cadenas (8x6.0m=48.0m)<br>Subtotal: 184.4 m × 0.617 kg/m = 113.8 kg<br><strong>+ 23% extra por empalmes (40Ø) y despuntes largos.</strong></span></td>
+                </tr>
+                <tr>
+                  <td><strong>Acero Transversal (Estribos)</strong></td>
+                  <td>Acero A630-420H o AT56-50H<br><span style="font-size:11px; color:#64748b;">Barras de Ø6mm @ 15cm</span></td>
+                  <td><strong>32.0 kg</strong></td>
+                  <td><span style="font-size:11px;">Perímetro 15x15 → Estribo L=0.50m. Pilares (84 unid) + Cadenas (80) + Zapata (100).<br>Subtotal: 264 estribos × 0.50m = 132m × 0.222 kg/m = 29.3 kg<br><strong>+ 10% por ganchos sísmicos (135°) y pérdidas.</strong></span></td>
+                </tr>
+                <tr>
+                  <td><strong>Relleno Drenante (Trasdós)</strong></td>
+                  <td>Grava o Bolón clasificado<br><span style="font-size:11px; color:#64748b;">Separado con Geotextil no tejido</span></td>
+                  <td><strong>~3.50 m³</strong></td>
+                  <td><span style="font-size:11px;">Prisma de drenaje tras el muro, altura de 1.00m hasta cota NPT, ancho variable.</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <div class="page">
+        <div class="page-inner">
+          <div class="header">
+            <div class="header-left">
+              <h2>Muro Albañilería Confinada</h2>
+              <p>Recomendaciones Constructivas (1/2)</p>
+            </div>
+            <div class="header-right">
+              <div class="logo">LAYEL</div>
+            </div>
+          </div>
+          <div class="content" style="padding: 20px;">
+            <style>
+              .rec-box {
+                background: #f8fafc;
+                border-left: 4px solid #2563eb;
+                padding: 15px;
+                margin-bottom: 20px;
+                border-radius: 0 4px 4px 0;
+              }
+              .rec-box h4 {
+                margin: 0 0 10px 0;
+                color: #1e3a8a;
+                font-size: 14px;
+                text-transform: uppercase;
+              }
+              .rec-box p {
+                margin: 0 0 8px 0;
+                font-size: 13px;
+                color: #334155;
+                line-height: 1.6;
+              }
+              .rec-box ul {
+                margin: 0;
+                padding-left: 20px;
+                font-size: 13px;
+                color: #334155;
+                line-height: 1.6;
+              }
+            </style>
+
+            <div class="rec-box">
+              <h4>1. PROTECCIÓN CONTRA LA HUMEDAD (MURO ENTERRADO)</h4>
+              <p>Al utilizar albañilería para contención, el ladrillo no debe quedar expuesto directamente a la tierra húmeda, ya que su porosidad genera absorción por capilaridad, degradando el mortero y provocando eflorescencias salinas.</p>
+              <ul>
+                <li><strong>Impermeabilización:</strong> La cara del muro que da hacia el cerro (trasdós) debe recibir un <strong>estuco grueso impermeabilizado</strong> (con aditivo hidrófugo).</li>
+                <li><strong>Pintura Asfáltica:</strong> Sobre el estuco seco, aplicar al menos dos manos de pintura asfáltica (ej. Igol Denso) antes de vaciar el relleno de grava.</li>
+                <li><strong>Drenaje:</strong> Las barbacanas (Ø75mm) instaladas a la altura de la cadena intermedia son críticas para aliviar la presión hidrostática del agua subterránea.</li>
+              </ul>
+            </div>
+
+            <div class="rec-box">
+              <h4>2. LOGÍSTICA Y AHORRO EN COSTOS</h4>
+              <p>Optar por albañilería confinada en lugar de un muro cantiléver de hormigón armado para este desnivel (1.00 m) presenta importantes beneficios económicos:</p>
+              <ul>
+                <li><strong>Ahorro en Moldajes:</strong> Se elimina la necesidad de encofrar tableros continuos por ambas caras del muro. Solo se requieren moldajes menores (tapas) para pilares y cadenas.</li>
+                <li><strong>Reducción de Materiales:</strong> El volumen de hormigón preparado y la cuantía total de acero disminuyen drásticamente, concentrándose solo en los elementos confinantes (pilares de 15x15 y cadenas de 15x20/15x15).</li>
+                <li><strong>Mano de Obra:</strong> La construcción con ladrillo fiscal o Titán permite utilizar albañiles tradicionales, reduciendo la dependencia de carpinteros y enfierradores de obra gruesa especializada.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="page">
+        <div class="page-inner">
+          <div class="header">
+            <div class="header-left">
+              <h2>Muro Albañilería Confinada</h2>
+              <p>Justificación Estructural (2/2)</p>
+            </div>
+            <div class="header-right">
+              <div class="logo">LAYEL</div>
+            </div>
+          </div>
+          <div class="content" style="padding: 20px;">
+            <div class="rec-box">
+              <h4>3. JUSTIFICACIÓN DE ARMADURA EN PILARES (Ø10mm)</h4>
+              <p>Es natural tener precauciones sobre la capacidad a flexión de los pilares ante el empuje de tierras, especialmente usando armadura longitudinal de 10mm. Esta decisión técnica se justifica por lo siguiente:</p>
+              <ul>
+                <li><strong>Baja Altura de Retención:</strong> El empuje activo de tierras para un desnivel efectivo de solo 1.00 m genera un momento flector moderado en la base (M_u ≈ 1.6 kNm).</li>
+                <li><strong>Alta Densidad de Confinamiento:</strong> Se ha diseñado una grilla muy densa con pilares cada 1.00 m y una cadena intermedia a los 80 cm de altura. Esto disminuye la luz libre de flexión (pandeo) del pilar.</li>
+                <li><strong>Capacidad de la Sección:</strong> El pilar de 15x15 cm armado con <strong>4Ø10mm</strong> posee un momento resistente nominal φMn ≈ 5.9 kNm, lo que supera con creces el momento actuante, cumpliendo sobradamente con la flexocompresión y tracción generada.</li>
+                <li><em>Nota de Seguridad:</em> Si durante la excavación se constata un suelo de muy mala calidad (arcillas expansivas muy plásticas o napa freática alta permanente), el calculista en obra puede autorizar el aumento de la armadura vertical a <strong>4Ø12mm</strong>.</li>
+              </ul>
+            </div>
+
+            <div class="rec-box">
+              <h4>4. JUSTIFICACIÓN DE ARMADURA EN CADENAS INTERMEDIAS</h4>
+              <p>Las cadenas no solo amarran los pilares, sino que trabajan a flexión horizontal recibiendo el empuje que les transfiere el paño de albañilería (efecto placa).</p>
+              <ul>
+                <li><strong>Luz Libre Corta:</strong> La separación entre pilares es de apenas 1.00 m. Esta corta distancia hace que el momento flector horizontal (M_u ≈ 0.48 kNm) sea mínimo.</li>
+                <li><strong>Capacidad Resistente:</strong> Al igual que los pilares, las cadenas de 15x15 cm armadas con <strong>4Ø10mm</strong> ofrecen una resistencia a flexión horizontal de φMn ≈ 5.9 kNm.</li>
+                <li><strong>Conclusión:</strong> El diseño asegura que ni los pilares por flexión vertical ni las cadenas por flexión horizontal fallarán ante el empuje de tierras para esta altura, garantizando la integridad del muro de contención.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  </script>
+</body>
+</html>

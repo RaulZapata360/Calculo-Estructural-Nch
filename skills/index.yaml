@@ -1,0 +1,69 @@
+---
+# EstructuraCalc Skills Catalog
+# Progressive Disclosure: Nivel 1 (siempre cargado, bajo en tokens)
+# Último actualizado: 2026-05-21
+
+skills:
+  - id: structural-report-generator
+    name: "Generador de Reportes Estructurales"
+    description: "Genera PDF, tablas y gráficas de resultados de cálculo. Incluye resumen ejecutivo, cargas, fuerzas, armadura y verificaciones NCh430."
+    pattern: sequential-workflow
+    category: document-creation
+    tags: [pdf, report, documentation, tables, graphs, nch430]
+    instructions: skills/structural-report-generator/instructions.md
+    files: skills/structural-report-generator/files/
+    complexity: medium
+    estimated_time: "15-30 min"
+
+  - id: iterative-design-workflow
+    name: "Flujo de Diseño Iterativo"
+    description: "Procedimiento paso a paso para diseño por combinaciones de cargas críticas. Itera: asumir → calcular → validar → refinar armadura."
+    pattern: iterative-refinement
+    category: workflow-automation
+    tags: [design, iteration, nch430, loads, critical-cases, rebar]
+    instructions: skills/iterative-design-workflow/instructions.md
+    files: skills/iterative-design-workflow/files/
+    complexity: high
+    estimated_time: "30-60 min"
+
+  - id: structural-dashboard
+    name: "Dashboard Estructural"
+    description: "Visualización de KPIs y métricas: cargas vs capacidad, criticidades, armadura, factores de seguridad. Gráficas interactivas."
+    pattern: context-aware-branching
+    category: workflow-automation
+    tags: [dashboard, visualization, kpi, graphs, performance, monitoring]
+    instructions: skills/structural-dashboard/instructions.md
+    files: skills/structural-dashboard/files/
+    complexity: medium
+    estimated_time: "20-40 min"
+
+# Configuración global
+config:
+  version: "1.0"
+  project: "EstructuraCalc v2.1"
+  normatives:
+    - "NCh430 Of.2008 (Diseño hormigón armado)"
+    - "NCh433-2009 (Diseño sísmico)"
+    - "NCh2123-2003 (Albañilería confinada)"
+    - "NCh3171-2017 (Fundaciones)"
+  stack:
+    frontend: "Vanilla JavaScript + SVG"
+    backend: "Python"
+    persistence: "localStorage + JSON"
+  critical_files:
+    - "PROJECT.md (biblia técnica)"
+    - "INFORME_FINAL_ESTRUCTURA.md (estado actual)"
+    - "modules/solver.js (motor LRFD — NO TOCAR sin auditoría)"
+    - "modules/state.js (estado global S)"
+
+# Patrones disponibles
+patterns:
+  sequential-workflow: "Pasos en orden fijo. Ej: validar → configurar → ejecutar → verificar"
+  iterative-refinement: "Generar → revisar → mejorar → repetir. Ej: asumir armadura → calcular → validar → iterar"
+  context-aware-branching: "Mismo input, distintos caminos. Ej: si es muro → uno; si es losa → otro"
+
+# Categorías de output
+categories:
+  document-creation: "PDF, reportes, especificaciones, documentos entregables"
+  workflow-automation: "Procesos iterativos, orquestación multi-paso, flujogramas"
+  mcp-enhancement: "Guías de uso MCP, mejores prácticas, manejo de errores"

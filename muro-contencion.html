@@ -1,0 +1,2473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Muro de Contención | EstructuraCalc</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0d1117;
+      --surface:     #161b22;
+      --border:      rgba(48,54,61,0.9);
+      --accent:      #2f81f7;
+      --accent-dim:  rgba(47,129,247,0.15);
+      --text:        #e6edf3;
+      --text-muted:  #8b949e;
+      --ok:          #3fb950;
+      --warn:        #d29922;
+      --danger:      #f85149;
+    }
+
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── HEADER ─────────────────────────────────────────── */
+    #hdr {
+      display: flex; align-items: center; gap: 14px;
+      padding: 9px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #hdr .logo { display:flex; align-items:center; gap:8px; }
+    #hdr .logo h1 { font-size:0.88rem; font-weight:700; }
+    #hdr .logo p  { font-size:0.65rem; color:var(--text-muted); }
+    #hdr .badge {
+      font-size:0.68rem; font-weight:600; color:#e6edf3;
+      background:rgba(248,200,60,0.2); border:1px solid rgba(248,200,60,0.4);
+      padding:3px 10px; border-radius:12px;
+    }
+    #hdr .spacer { flex:1; }
+    #hdr .nav-select {
+      font-size:0.74rem; color:var(--text); background:var(--surface);
+      padding:5px 11px; border-radius:5px; border:1px solid var(--border);
+      outline:none; cursor:pointer; font-family:inherit;
+    }
+    #hdr .nav-select:hover, #hdr .nav-select:focus { border-color:rgba(47,129,247,0.4); }
+
+    /* ─── LAYOUT ─────────────────────────────────────────── */
+    #app { display:flex; flex:1; overflow:hidden; }
+
+    /* ─── SIDEBAR ────────────────────────────────────────── */
+    #sidebar {
+      width: 270px; flex-shrink:0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    #sidebar-tabs {
+      display:flex; border-bottom:1px solid var(--border); flex-shrink:0;
+    }
+    #sidebar-tabs button {
+      flex:1; padding:9px 4px; font-size:0.68rem; font-weight:600;
+      background:transparent; border:none; color:var(--text-muted);
+      cursor:pointer; border-bottom:2px solid transparent; transition:all 0.12s;
+    }
+    #sidebar-tabs button.active { color:var(--accent); border-bottom-color:var(--accent); }
+    #sidebar-body { flex:1; overflow-y:auto; padding:14px 12px; }
+    .panel { display:none; }
+    .panel.active { display:block; }
+    .field-group { margin-bottom:18px; }
+    .field-group h4 {
+      font-size:0.70rem; font-weight:700; color:var(--text-muted);
+      text-transform:uppercase; letter-spacing:0.06em;
+      margin-bottom:8px; padding-bottom:5px;
+      border-bottom:1px solid var(--border);
+    }
+    .field-row {
+      display:grid; grid-template-columns:1fr auto auto;
+      align-items:center; gap:6px; margin-bottom:7px;
+    }
+    .field-row label { font-size:0.76rem; color:var(--text-muted); }
+    .field-row input {
+      width:72px; padding:4px 7px;
+      background:rgba(255,255,255,0.06); border:1px solid var(--border);
+      border-radius:4px; color:var(--text); font-size:0.78rem;
+      font-family:'JetBrains Mono',monospace; text-align:right;
+    }
+    .field-row input:focus { outline:none; border-color:rgba(47,129,247,0.5); background:rgba(47,129,247,0.05); }
+    .field-row .unit { font-size:0.68rem; color:var(--text-muted); width:28px; }
+    .info-box {
+      background:rgba(47,129,247,0.06); border:1px solid rgba(47,129,247,0.2);
+      border-radius:6px; padding:9px 10px; font-size:0.72rem; color:var(--text-muted); line-height:1.5;
+      margin-top:8px;
+    }
+    .soil-zone {
+      border-radius:6px; padding:8px 10px; margin-bottom:8px;
+      border:1px solid; font-size:0.72rem; line-height:1.6;
+    }
+    .soil-zone .zone-title {
+      font-size:0.68rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:0.05em; margin-bottom:3px;
+    }
+    .zone-fill   { background:rgba(139,104,20,0.10); border-color:rgba(139,104,20,0.35); }
+    .zone-base   { background:rgba(200,152,42,0.10); border-color:rgba(200,152,42,0.35); }
+    .zone-free   { background:rgba(63,185,80,0.08);  border-color:rgba(63,185,80,0.30); }
+
+    /* ─── MAIN AREA ──────────────────────────────────────── */
+    #main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+    #canvas-wrap {
+      flex:1; position:relative; overflow:hidden;
+      background: radial-gradient(ellipse at 30% 40%, rgba(47,129,247,0.04) 0%, transparent 60%), var(--bg);
+    }
+    #wall-svg {
+      display:block; width:100%; height:100%;
+      cursor:grab;
+    }
+    #wall-svg.dragging { cursor:grabbing; }
+
+    /* ─── ZOOM CONTROLS ─────────────────────────────────── */
+    #zoom-ctrl {
+      position:absolute; bottom:12px; right:12px;
+      display:flex; flex-direction:column; gap:4px;
+    }
+    #zoom-ctrl button {
+      width:30px; height:30px; border-radius:5px;
+      background:rgba(22,27,34,0.92); border:1px solid var(--border);
+      color:var(--text-muted); font-size:1rem; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      transition:all 0.12s;
+    }
+    #zoom-ctrl button:hover { color:var(--accent); border-color:rgba(47,129,247,0.4); }
+    #zoom-pct {
+      font-size:0.64rem; color:var(--text-muted); text-align:center;
+      font-family:'JetBrains Mono',monospace;
+    }
+    #pdf-btn {
+      position:absolute; bottom:12px; left:12px;
+      display:flex; align-items:center; gap:5px;
+      padding:5px 10px; border-radius:6px;
+      background:rgba(0,64,140,0.88); border:1px solid rgba(47,129,247,0.45);
+      color:#d8eaff; font-size:0.72rem; cursor:pointer; transition:all 0.12s;
+      font-family:inherit;
+    }
+    #pdf-btn:hover { background:rgba(0,90,200,0.96); color:#fff; }
+
+    /* ─── RESULTS BAR ────────────────────────────────────── */
+    #results-bar {
+      border-top:1px solid var(--border);
+      background:var(--surface);
+      padding:9px 20px;
+      display:flex; gap:18px; align-items:center;
+      flex-wrap:wrap; flex-shrink:0;
+    }
+    .kpi { display:flex; flex-direction:column; gap:2px; min-width:90px; }
+    .kpi .lbl { font-size:0.65rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.04em; }
+    .kpi .val { font-size:0.90rem; font-family:'JetBrains Mono',monospace; font-weight:700; }
+    .kpi .val.ok     { color:var(--ok); }
+    .kpi .val.warn   { color:var(--warn); }
+    .kpi .val.danger { color:var(--danger); }
+    .kpi .val.neutral{ color:var(--text); }
+    .kpi-sep { width:1px; height:36px; background:var(--border); flex-shrink:0; }
+
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:rgba(139,148,158,0.3); border-radius:3px; }
+
+    /* ─── CALC BREAKDOWN (panel Cargas) ─────────────────── */
+    .calc-block {
+      margin-bottom:12px;
+      padding:9px 11px 10px;
+      border-radius:6px;
+      border-left:3px solid;
+      font-size:0.70rem;
+      line-height:1.75;
+      font-family:'JetBrains Mono',monospace;
+      background:rgba(255,255,255,0.025);
+      color:var(--text-muted);
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+    .calc-block.pa    { border-color:rgba(248,160,48,0.65); }
+    .calc-block.pp    { border-color:rgba(63,185,80,0.65);  }
+    .calc-block.pesos { border-color:rgba(154,128,240,0.65);}
+    .calc-block.q     { border-color:rgba(88,166,255,0.65); }
+    .calc-block .btitle {
+      display:block; font-weight:700; font-size:0.69rem;
+      text-transform:uppercase; letter-spacing:0.05em; margin-bottom:7px;
+      font-family:Inter,system-ui,sans-serif;
+    }
+    .calc-block strong { color:var(--text); font-weight:700; }
+    .calc-ok    { color:var(--ok);    font-weight:700; }
+    .calc-warn  { color:var(--warn);  font-weight:700; }
+    .calc-danger{ color:var(--danger);font-weight:700; }
+    .calc-sep {
+      border:none; border-top:1px solid rgba(48,54,61,0.7);
+      margin:7px 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header id="hdr">
+  <div class="logo">
+    <svg width="18" height="18" fill="none" stroke="var(--accent)" stroke-width="2" viewBox="0 0 24 24">
+      <path d="M3 20h18M3 20V7l9-4 9 4v13M9 20v-5h6v5"/>
+    </svg>
+    <div>
+      <h1>EstructuraCalc</h1>
+      <p>Muro de Contención · NCh3171 · Rankine</p>
+    </div>
+  </div>
+  <span class="badge">Módulo Independiente</span>
+  <div class="spacer"></div>
+  <select class="nav-select" onchange="if(this.value) window.location.href=this.value">
+    <option value="muro-contencion.html" selected>Versión: Hormigón Armado (Cantiléver)</option>
+    <option value="muro-albanileria.html">Versión: Albañilería Confinada (Baja Altura)</option>
+    <option value="index.html">Volver a Adosamiento</option>
+  </select>
+</header>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div id="sidebar-tabs">
+      <button class="active" data-tab="geo"   onclick="setTab('geo',this)">Geometría</button>
+      <button                data-tab="soil"  onclick="setTab('soil',this)">Suelo</button>
+      <button                data-tab="loads" onclick="setTab('loads',this)">Cargas</button>
+      <button                data-tab="mat"   onclick="setTab('mat',this)">Materiales</button>
+    </div>
+    <div id="sidebar-body">
+
+      <!-- TAB: GEOMETRÍA -->
+      <div class="panel active" id="panel-geo">
+        <div class="field-group">
+          <h4>Pantalla (Muro)</h4>
+          <div class="field-row">
+            <label>H libre</label>
+            <input type="number" id="H_libre" value="1.00" step="0.05" min="0.5" onchange="onGeo('H_libre',this)">
+            <span class="unit">m</span>
+          </div>
+          <div class="field-row">
+            <label>H empotr.</label>
+            <input type="number" id="H_emp" value="0.40" step="0.05" min="0.1" onchange="onGeo('H_emp',this)">
+            <span class="unit">m</span>
+          </div>
+          <div class="field-row">
+            <label>Espesor t</label>
+            <input type="number" id="t_muro" value="0.25" step="0.02" min="0.12" onchange="onGeo('t_muro',this)">
+            <span class="unit">m</span>
+          </div>
+          <div class="field-row">
+            <label>Longitud L</label>
+            <input type="number" id="L" value="6.00" step="0.5" min="1" onchange="onGeo('L',this)">
+            <span class="unit">m</span>
+          </div>
+        </div>
+        <div class="field-group">
+          <h4>Zapata Corrida</h4>
+          <div class="field-row">
+            <label>Ancho B</label>
+            <input type="number" id="B_zap" value="1.20" step="0.05" min="0.3" onchange="onGeo('B_zap',this)">
+            <span class="unit">m</span>
+          </div>
+          <div class="field-row">
+            <label>Altura Hf</label>
+            <input type="number" id="Hf" value="0.25" step="0.05" min="0.15" onchange="onGeo('Hf',this)">
+            <span class="unit">m</span>
+          </div>
+          <div class="field-row">
+            <label>Pie (toe)</label>
+            <input type="number" id="B_toe" value="0.50" step="0.05" min="0" onchange="onGeo('B_toe',this)">
+            <span class="unit">m</span>
+          </div>
+          <div class="info-box" id="geo-info"></div>
+        </div>
+      </div>
+
+      <!-- TAB: SUELO -->
+      <div class="panel" id="panel-soil">
+        <!-- ZONA 1: Relleno retenido -->
+        <div class="soil-zone zone-fill">
+          <div class="zone-title" style="color:#c8a050;">⬛ Relleno retenido (detrás del muro)</div>
+          Grava drenante GP/GW · sin finos · drenaje libre<br>
+          Evita presión hidrostática sobre la pantalla
+        </div>
+        <div class="field-group">
+          <h4>Propiedades Relleno (GP)</h4>
+          <div class="field-row">
+            <label>γ relleno</label>
+            <input type="number" id="gamma" value="19.0" step="0.5" min="14" max="22" onchange="onSoil('gamma',this)">
+            <span class="unit">kN/m³</span>
+          </div>
+          <div class="field-row">
+            <label>φ fricción</label>
+            <input type="number" id="phi" value="35" step="1" min="20" max="45" onchange="onSoil('phi',this)">
+            <span class="unit">°</span>
+          </div>
+          <div class="field-row">
+            <label>c cohesión</label>
+            <input type="number" id="c" value="0" step="1" min="0" onchange="onSoil('c',this)">
+            <span class="unit">kPa</span>
+          </div>
+          <div class="field-row">
+            <label>N.F. (prof.)</label>
+            <input type="number" id="NF" value="3.0" step="0.1" min="0" onchange="onSoil('NF',this)">
+            <span class="unit">m</span>
+          </div>
+          <div class="info-box" id="soil-info"></div>
+        </div>
+
+        <!-- ZONA 2: Sello de fundación -->
+        <div class="soil-zone zone-base">
+          <div class="zone-title" style="color:#d4a44a;">▭ Sello de fundación (bajo zapata)</div>
+          Base estabilizada · CBR ~80% · compactada al 95% DSMR<br>
+          Pendiente mecánica de suelos para confirmar q<sub>adm</sub>
+        </div>
+        <div class="field-group">
+          <h4>Base Estabilizada (pre-dimensión)</h4>
+          <div class="field-row">
+            <label>q adm. (est.)</label>
+            <input type="number" id="qAdm" value="200" step="10" min="50" onchange="onSoil('qAdm',this)">
+            <span class="unit">kPa</span>
+          </div>
+          <div class="field-row">
+            <label>CBR</label>
+            <input type="number" id="cbr" value="80" step="5" min="10" max="100" onchange="onSoil('cbr',this)">
+            <span class="unit">%</span>
+          </div>
+        </div>
+
+        <!-- ZONA 3: Lado libre -->
+        <div class="soil-zone zone-free">
+          <div class="zone-title" style="color:#5a9e6a;">▲ Terreno natural (frente del muro)</div>
+          Terreno natural in situ · resistencia pasiva Rankine<br>
+          <em>NCh 02 §3.2: Pp = 0 en FS_d (omisión conservadora)</em>
+        </div>
+      </div>
+
+      <!-- TAB: CARGAS -->
+      <div class="panel" id="panel-loads">
+        <div class="field-group">
+          <h4>Sobrecarga en Coronación</h4>
+          <div class="field-row">
+            <label>q sobrecarga</label>
+            <input type="number" id="qSobrecarga" value="0" step="1" min="0" onchange="onLoads('qSobrecarga',this)">
+            <span class="unit">kPa</span>
+          </div>
+          <div class="info-box" style="margin-bottom:12px;">
+            Carga distribuida uniforme sobre el relleno.<br>
+            Tráfico vehicular: 5–10 kPa · Almacenamiento: 10–20 kPa
+          </div>
+        </div>
+        <!-- Cálculo detallado de fuerzas (se llena desde JS) -->
+        <div id="carga-breakdown"></div>
+      </div>
+
+      <!-- TAB: MATERIALES -->
+      <div class="panel" id="panel-mat">
+        <div class="field-group">
+          <h4>Hormigón y Acero</h4>
+          <div class="field-row">
+            <label>f'c hormigón</label>
+            <input type="number" id="fc" value="25" step="5" min="17" onchange="onMat('fc',this)">
+            <span class="unit">MPa</span>
+          </div>
+          <div class="field-row">
+            <label>fy acero</label>
+            <input type="number" id="fy" value="420" step="0" min="420" onchange="onMat('fy',this)">
+            <span class="unit">MPa</span>
+          </div>
+          <div class="field-row">
+            <label>γ hormigón</label>
+            <input type="number" id="gc" value="25.0" step="0.5" onchange="onMat('gc',this)">
+            <span class="unit">kN/m³</span>
+          </div>
+          <div class="field-row">
+            <label>Rec. pantalla</label>
+            <input type="number" id="rec_pant" value="5" step="1" min="4" onchange="onMat('rec_pant',this)">
+            <span class="unit">cm</span>
+          </div>
+          <div class="field-row">
+            <label>Rec. zapata</label>
+            <input type="number" id="rec" value="7" step="1" min="5" onchange="onMat('rec',this)">
+            <span class="unit">cm</span>
+          </div>
+        </div>
+        <div class="info-box">
+          NCh430 §3.1: rec. pantalla = 5 cm (con encofrado); rec. zapata = 7 cm (contacto directo suelo).
+        </div>
+        <!-- Diseño armadura (se llena desde JS) -->
+        <div id="mat-breakdown"></div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main id="main">
+    <div id="canvas-wrap">
+      <svg id="wall-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+
+      <!-- ZOOM CONTROLS -->
+      <div id="zoom-ctrl">
+        <button onclick="zoomStep(1.25)" title="Acercar">+</button>
+        <button onclick="resetView()"    title="Restablecer vista">⊙</button>
+        <button onclick="zoomStep(0.80)" title="Alejar">−</button>
+        <div id="zoom-pct">100%</div>
+      </div>
+      <!-- PDF EXPORT -->
+      <button id="pdf-btn" onclick="exportPDF()" title="Exportar planos A3 (perfil transversal + longitudinal)">⬇ Exportar PDF</button>
+    </div>
+
+    <!-- RESULTS BAR -->
+    <div id="results-bar">
+      <div class="kpi">
+        <span class="lbl">Ka activo</span>
+        <span class="val neutral" id="kpi-Ka">—</span>
+      </div>
+      <div class="kpi">
+        <span class="lbl">Pa (kN/m)</span>
+        <span class="val neutral" id="kpi-Pa">—</span>
+      </div>
+      <div class="kpi">
+        <span class="lbl">Pp (kN/m)</span>
+        <span class="val neutral" id="kpi-Pp">—</span>
+      </div>
+      <div class="kpi-sep"></div>
+      <div class="kpi">
+        <span class="lbl">FS Volcamiento</span>
+        <span class="val" id="kpi-FSv">—</span>
+      </div>
+      <div class="kpi">
+        <span class="lbl">FS Deslizamiento</span>
+        <span class="val" id="kpi-FSd">—</span>
+      </div>
+      <div class="kpi-sep"></div>
+      <div class="kpi">
+        <span class="lbl">q punta (kPa)</span>
+        <span class="val neutral" id="kpi-qp">—</span>
+      </div>
+      <div class="kpi">
+        <span class="lbl">q talón (kPa)</span>
+        <span class="val neutral" id="kpi-qt">—</span>
+      </div>
+      <div class="kpi">
+        <span class="lbl">q adm (kPa)</span>
+        <span class="val" id="kpi-qAdm">—</span>
+      </div>
+      <div class="kpi-sep"></div>
+      <div class="kpi">
+        <span class="lbl">M base (kN·m/m)</span>
+        <span class="val neutral" id="kpi-Mb">—</span>
+      </div>
+      <div class="kpi">
+        <span class="lbl">As req (cm²/m)</span>
+        <span class="val neutral" id="kpi-As">—</span>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<script src="modules/retencion/state.js"></script>
+<script src="modules/retencion/solver.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════
+// PAN / ZOOM STATE
+// ══════════════════════════════════════════════════════════════
+const view = { tx: 0, ty: 0, scale: 1.0 };
+let _drag  = null;   // {sx, sy, tx0, ty0}
+
+function applyTransform() {
+  const g = document.getElementById('scene-g');
+  if (g) g.setAttribute('transform', `translate(${view.tx.toFixed(1)},${view.ty.toFixed(1)}) scale(${view.scale.toFixed(4)})`);
+  document.getElementById('zoom-pct').textContent = Math.round(view.scale * 100) + '%';
+}
+
+function zoomAt(mx, my, factor) {
+  factor = Math.min(Math.max(factor, 0.2 / view.scale), 8 / view.scale);
+  view.tx = mx - (mx - view.tx) * factor;
+  view.ty = my - (my - view.ty) * factor;
+  view.scale *= factor;
+  applyTransform();
+}
+
+function zoomStep(factor) {
+  const wrap = document.getElementById('canvas-wrap');
+  zoomAt(wrap.clientWidth / 2, wrap.clientHeight / 2, factor);
+}
+
+function resetView() {
+  // re-center to fit scene in container
+  const wrap = document.getElementById('canvas-wrap');
+  const cw = wrap.clientWidth, ch = wrap.clientHeight;
+  const s = Math.min(cw / SCENE_W, ch / SCENE_H) * 0.92;
+  view.scale = s;
+  view.tx = (cw - SCENE_W * s) / 2;
+  view.ty = (ch - SCENE_H * s) / 2;
+  applyTransform();
+}
+
+// ── Touch/mouse events ─────────────────────────────────────
+function setupPanZoom() {
+  const svg = document.getElementById('wall-svg');
+
+  svg.addEventListener('wheel', e => {
+    e.preventDefault();
+    const r = svg.getBoundingClientRect();
+    zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.12 : 1 / 1.12);
+  }, { passive: false });
+
+  svg.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    _drag = { sx: e.clientX, sy: e.clientY, tx0: view.tx, ty0: view.ty };
+    svg.classList.add('dragging');
+  });
+
+  window.addEventListener('mouseup', () => {
+    _drag = null;
+    document.getElementById('wall-svg').classList.remove('dragging');
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (!_drag) return;
+    view.tx = _drag.tx0 + (e.clientX - _drag.sx);
+    view.ty = _drag.ty0 + (e.clientY - _drag.sy);
+    applyTransform();
+  });
+
+  // Touch
+  let lastTouchDist = 0;
+  svg.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      _drag = { sx: t.clientX, sy: t.clientY, tx0: view.tx, ty0: view.ty };
+    } else if (e.touches.length === 2) {
+      _drag = null;
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastTouchDist = Math.hypot(dx, dy);
+    }
+    e.preventDefault();
+  }, { passive: false });
+
+  svg.addEventListener('touchmove', e => {
+    if (e.touches.length === 1 && _drag) {
+      const t = e.touches[0];
+      view.tx = _drag.tx0 + (t.clientX - _drag.sx);
+      view.ty = _drag.ty0 + (t.clientY - _drag.sy);
+      applyTransform();
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      const r = svg.getBoundingClientRect();
+      const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left;
+      const my = (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top;
+      if (lastTouchDist > 0) zoomAt(mx, my, dist / lastTouchDist);
+      lastTouchDist = dist;
+    }
+    e.preventDefault();
+  }, { passive: false });
+
+  svg.addEventListener('touchend', () => { _drag = null; });
+}
+
+// ══════════════════════════════════════════════════════════════
+// SCENE DIMENSIONS (internal coordinate system)
+// ══════════════════════════════════════════════════════════════
+const SCENE_W = 1060;
+const SCENE_H =  680;
+
+// ══════════════════════════════════════════════════════════════
+// UI CONTROLLER
+// ══════════════════════════════════════════════════════════════
+function setTab(tab, btn) {
+  document.querySelectorAll('#sidebar-tabs button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+  RW.ui.tab = tab;
+}
+
+function onGeo(key, el)   { RW.geometry[key]  = parseFloat(el.value) || 0; refresh(); }
+function onSoil(key, el)  { RW.soil[key]       = parseFloat(el.value) || 0; refresh(); }
+function onLoads(key, el) { RW.loads[key]      = parseFloat(el.value) || 0; refresh(); }
+function onMat(key, el)   {
+  const v = parseFloat(el.value) || 0;
+  RW.materials[key] = (key === 'rec' || key === 'rec_pant') ? v / 100 : v;
+  refresh();
+}
+
+// ══════════════════════════════════════════════════════════════
+// REFRESH
+// ══════════════════════════════════════════════════════════════
+function refresh() {
+  const res = RWSolver.run(RW);
+  RW.results = res;
+  updateInfoBoxes(res);
+  renderResults(res);
+  renderCargas(res);
+  renderMat(res);
+  drawWallSVG(RW, res);
+}
+
+function updateInfoBoxes(res) {
+  const g = RW.geometry;
+  document.getElementById('geo-info').innerHTML =
+    `B talón: <strong>${(res.B_talon*100).toFixed(0)} cm</strong> &nbsp;|&nbsp; ` +
+    `H pantalla: <strong>${(res.H_stem*100).toFixed(0)} cm</strong> &nbsp;|&nbsp; ` +
+    `H total: <strong>${(res.H_total*100).toFixed(0)} cm</strong>`;
+  document.getElementById('soil-info').innerHTML =
+    `<strong>Ka = ${res.Ka.toFixed(3)}</strong> &nbsp;|&nbsp; ` +
+    `<strong>Kp = ${res.Kp.toFixed(3)}</strong><br>` +
+    `σa base: <strong>${res.σa_base.toFixed(1)} kPa</strong> &nbsp;|&nbsp; ` +
+    `μ: <strong>${res.μ.toFixed(3)}</strong>`;
+}
+
+function renderResults(res) {
+  const fsv = res.FS_volcamiento, fsd = res.FS_deslizamiento;
+  const fsCls = fs => fs >= 1.5 ? 'ok' : (fs >= 1.2 ? 'warn' : 'danger');
+  const qAdm  = RW.soil.qAdm || 200;
+  const qMax  = Math.max(res.q_punta, res.q_talon);
+  const qCls  = qMax <= qAdm ? 'ok' : 'danger';
+
+  document.getElementById('kpi-Ka').textContent   = res.Ka.toFixed(3);
+  document.getElementById('kpi-Pa').textContent   = res.Pa.toFixed(2);
+  document.getElementById('kpi-Pp').textContent   = res.Pp.toFixed(2);
+  document.getElementById('kpi-FSv').textContent  = isFinite(fsv) ? fsv.toFixed(2) : '∞';
+  document.getElementById('kpi-FSv').className    = 'val ' + fsCls(fsv);
+  document.getElementById('kpi-FSd').textContent  = isFinite(fsd) ? fsd.toFixed(2) : '∞';
+  document.getElementById('kpi-FSd').className    = 'val ' + fsCls(fsd);
+  document.getElementById('kpi-qp').textContent   = res.q_punta.toFixed(1);
+  document.getElementById('kpi-qt').textContent   = res.q_talon.toFixed(1);
+  document.getElementById('kpi-qAdm').textContent = qAdm + ' kPa';
+  document.getElementById('kpi-qAdm').className   = 'val ' + qCls;
+  document.getElementById('kpi-Mb').textContent   = res.M_base.toFixed(2);
+  document.getElementById('kpi-As').textContent   = res.As_req.toFixed(2);
+}
+
+// ══════════════════════════════════════════════════════════════
+// CARGAS BREAKDOWN (panel izquierdo, tab Cargas)
+// ══════════════════════════════════════════════════════════════
+function renderCargas(res) {
+  const g  = RW.geometry;
+  const s  = RW.soil;
+  const m  = RW.materials;
+  const q  = RW.loads.qSobrecarga;
+
+  // helpers de formato
+  const f2  = v => v.toFixed(2);
+  const f3  = v => v.toFixed(3);
+  const f4  = v => v.toFixed(4);
+  const f1  = v => v.toFixed(1);
+  const φh  = (s.phi / 2).toFixed(1);      // φ/2
+  const H   = f2(res.H);                    // H_total (incluye Hf) — para Pa
+  const Hs  = f2(res.H_stem);               // H_stem — para pesos y M_base
+  const Bt  = f2(res.B_talon);
+  const qA  = s.qAdm || 200;
+  const qMax = Math.max(res.q_punta, res.q_talon);
+
+  const fsCls = fs => fs >= 1.5 ? 'calc-ok' : (fs >= 1.2 ? 'calc-warn' : 'calc-danger');
+  const qCls  = qMax <= qA ? 'calc-ok' : 'calc-danger';
+
+  // ── ① EMPUJE ACTIVO Pa ─────────────────────────────────────
+  const paBlock = `<div class="calc-block pa">
+<span class="btitle" style="color:#f8a030;">① Empuje Activo Pa — diagrama naranja</span>
+<strong>Coeficiente Rankine activo:</strong>
+Ka = tan²(45° − φ/2)
+   = tan²(45° − ${φh}°)
+   = <strong>${f4(res.Ka)}</strong>
+
+<hr class="calc-sep">
+<strong>Distribución σa(z) = Ka·γ·z + Ka·q</strong>
+  Superficie (z=0):
+    σa = Ka·q = ${f3(res.Ka)}·${q} = <strong>${f2(res.σa_sup)} kPa</strong>
+
+  Base zapata (z=H_total=${H} m):
+    σa = Ka·(γ·H + q)
+       = ${f3(res.Ka)}·(${s.gamma}·${H} + ${q})
+       = <strong>${f2(res.σa_base)} kPa</strong>
+
+<hr class="calc-sep">
+<strong>Resultante Pa = Pa_tri + Pa_rec</strong>
+  (H_total = H_libre+H_emp+Hf = ${H} m, NCh 02 §1.1)
+  Pa_tri = ½·Ka·γ·H²
+         = ½·${f3(res.Ka)}·${s.gamma}·${H}²
+         = <strong>${f2(res.Pa_tri)} kN/m</strong>
+
+  Pa_rec = Ka·q·H
+         = ${f3(res.Ka)}·${q}·${H}
+         = <strong>${f2(res.Pa_rec)} kN/m</strong>
+
+  Pa TOTAL = ${f2(res.Pa_tri)} + ${f2(res.Pa_rec)}
+           = <strong>${f2(res.Pa)} kN/m</strong>
+
+<hr class="calc-sep">
+<strong>Brazos y Momento volcamiento (sobre punta):</strong>
+  ya_tri = H/3 = ${H}/3
+         = <strong>${f2(res.ya_tri)} m</strong>
+  ya_rec = H/2 = ${H}/2
+         = <strong>${f2(res.ya_rec)} m</strong>
+
+  Mo = Pa_tri·ya_tri + Pa_rec·ya_rec
+     = ${f2(res.Pa_tri)}·${f2(res.ya_tri)} + ${f2(res.Pa_rec)}·${f2(res.ya_rec)}
+     = <strong>${f2(res.Mo)} kN·m/m</strong>
+</div>`;
+
+  // ── ② RESISTENCIA PASIVA Pp ────────────────────────────────
+  const sigma_pp_base = res.Kp * s.gamma * g.H_emp;
+  const ppBlock = `<div class="calc-block pp">
+<span class="btitle" style="color:#3fb950;">② Resistencia Pasiva Pp — solo informativa</span>
+⚠ NCh 02 §3.2: práctica conservadora Chile → <strong>Pp = 0</strong> en FS_deslizamiento.
+  (Omisión total: protege ante excavaciones futuras y erosión.)
+
+<hr class="calc-sep">
+<strong>Coeficiente Rankine pasivo (referencia):</strong>
+Kp = tan²(45° + φ/2)
+   = tan²(45° + ${φh}°)
+   = <strong>${f4(res.Kp)}</strong>
+
+<strong>Distribución σp(z) = Kp·γ·z</strong>
+  Base (z = H_emp = ${g.H_emp} m):
+    σp = ${f3(res.Kp)}·${s.gamma}·${g.H_emp}
+       = <strong>${f2(sigma_pp_base)} kPa</strong>
+
+  Pp = ½·${f3(res.Kp)}·${s.gamma}·${g.H_emp}²
+     = <strong>${f2(res.Pp)} kN/m</strong> (no sumada a FS_d)
+
+<hr class="calc-sep">
+<strong>Rozamiento base zapata:</strong>
+  μ = tan(⅔·φ) = tan(⅔·${s.phi}°)
+    = <strong>${f4(res.μ)}</strong>
+</div>`;
+
+  // ── ③ PESOS PROPIOS → N ────────────────────────────────────
+  const pesosBlock = `<div class="calc-block pesos">
+<span class="btitle" style="color:#9a80f0;">③ Pesos Propios → Resultante N</span>
+<strong>Pantalla:</strong>
+  W₁ = γc·t·H_stem
+     = ${m.gc}·${g.t_muro}·${Hs}
+     = <strong>${f2(res.W_pantalla)} kN/m</strong>
+  Brazo x₁ = B_toe + t/2
+           = ${g.B_toe} + ${f2(g.t_muro/2)}
+           = <strong>${f2(res.x_pantalla)} m</strong>
+
+<strong>Zapata corrida:</strong>
+  W₂ = γc·B_zap·Hf
+     = ${m.gc}·${g.B_zap}·${g.Hf}
+     = <strong>${f2(res.W_zapata)} kN/m</strong>
+  Brazo x₂ = B_zap/2
+           = ${g.B_zap}/2
+           = <strong>${f2(res.x_zapata)} m</strong>
+
+<strong>Suelo sobre talón (grava GP):</strong>
+  W₃ = γ·B_talón·H_stem
+     = ${s.gamma}·${Bt}·${Hs}
+     = <strong>${f2(res.W_suelo)} kN/m</strong>
+  Brazo x₃ = B_toe + t + B_t/2
+           = ${g.B_toe}+${g.t_muro}+${f2(res.B_talon/2)}
+           = <strong>${f2(res.x_suelo)} m</strong>${q > 0 ? `
+
+<strong>Sobrecarga sobre talón:</strong>
+  W₄ = q·B_talón
+     = ${q}·${Bt}
+     = <strong>${f2(res.W_sc)} kN/m</strong>` : ''}
+
+<hr class="calc-sep">
+<strong>Resultante vertical:</strong>
+  N = W₁+W₂+W₃${q > 0 ? '+W₄' : ''}
+    = ${f2(res.W_pantalla)}+${f2(res.W_zapata)}+${f2(res.W_suelo)}${q > 0 ? `+${f2(res.W_sc)}` : ''}
+    = <strong>${f2(res.N)} kN/m</strong>
+
+<strong>Momento resistente (sobre punta):</strong>
+  Mr = W₁x₁ + W₂x₂ + W₃x₃
+     = ${f2(res.W_pantalla)}·${f2(res.x_pantalla)}
+       + ${f2(res.W_zapata)}·${f2(res.x_zapata)}
+       + ${f2(res.W_suelo)}·${f2(res.x_suelo)}
+     = <strong>${f2(res.Mr)} kN·m/m</strong>
+
+<hr class="calc-sep">
+<strong>Factores de Seguridad (NCh3171):</strong>
+  FS_vol = Mr/Mo
+         = ${f2(res.Mr)}/${f2(res.Mo)}
+         = <span class="${fsCls(res.FS_volcamiento)}">${f2(res.FS_volcamiento)}</span> (mín 1.5)
+
+  FS_des = μ·N/Pa  (Pp=0 por NCh 02 §3.2)
+         = ${f3(res.μ)}·${f2(res.N)}/${f2(res.Pa)}
+         = <span class="${fsCls(res.FS_deslizamiento)}">${f2(res.FS_deslizamiento)}</span> (mín 1.5)
+</div>`;
+
+  // ── ④ PRESIÓN BAJO ZAPATA q(x) ────────────────────────────
+  const inKern = Math.abs(res.e) <= res.e_max;
+  const kernMsg = inKern
+    ? `<span class="calc-ok">DENTRO del núcleo ✓</span>`
+    : `<span class="calc-danger">FUERA del núcleo ⚠ (Meyerhof)</span>`;
+
+  const qFormula = inKern
+    ? `q_punta = (N/B)·(1 + 6e/B)
+         = (${f2(res.N)}/${g.B_zap})·(1+6·${f3(res.e)}/${g.B_zap})
+         = <strong>${f1(res.q_punta)} kPa</strong>
+  q_talón = (N/B)·(1 − 6e/B)
+         = <strong>${f1(res.q_talon)} kPa</strong>`
+    : `  (Triángulo: base efectiva = 3·xR = ${f3(3*res.xR)} m)
+  q_punta = 2·N / (3·xR)
+         = 2·${f2(res.N)} / (3·${f3(res.xR)})
+         = <strong>${f1(res.q_punta)} kPa</strong>
+  q_talón = 0 kPa`;
+
+  const qBlock = `<div class="calc-block q">
+<span class="btitle" style="color:#58a6ff;">④ Presión bajo Zapata q(x) — diagrama azul</span>
+<strong>Posición de la resultante:</strong>
+  xR = (Mr − Mo) / N
+     = (${f2(res.Mr)} − ${f2(res.Mo)}) / ${f2(res.N)}
+     = <strong>${f3(res.xR)} m</strong> (desde punta)
+
+<strong>Excentricidad:</strong>
+  e = B/2 − xR
+    = ${f2(g.B_zap/2)} − ${f3(res.xR)}
+    = <strong>${f3(res.e)} m</strong>
+  e_max = B/6 = ${f3(res.e_max)} m → ${kernMsg}
+
+<hr class="calc-sep">
+<strong>Distribución de presiones:</strong>
+${qFormula}
+
+<hr class="calc-sep">
+<strong>Verificación capacidad portante:</strong>
+  q_máx   = <strong>${f1(qMax)} kPa</strong>
+  q_adm   = ${qA} kPa  (pre-dimensión, CBR~${s.cbr||80}%)
+  → <span class="${qCls}">${qMax <= qA ? 'Cumple ✓' : 'Excede — revisar geometría ⚠'}</span>
+</div>`;
+
+  document.getElementById('carga-breakdown').innerHTML =
+    paBlock + ppBlock + pesosBlock + qBlock;
+}
+
+// ══════════════════════════════════════════════════════════════
+// MATERIALES BREAKDOWN (panel Materiales, tab mat)
+// ══════════════════════════════════════════════════════════════
+function renderMat(res) {
+  const g  = RW.geometry;
+  const s  = RW.soil;
+  const m  = RW.materials;
+
+  const f2 = v => v.toFixed(2);
+  const f3 = v => v.toFixed(3);
+  const f1 = v => v.toFixed(1);
+  const fc = m.fc, fy = m.fy;
+  const rec_pant = (m.rec_pant !== undefined ? m.rec_pant : 0.05) * 100;  // cm
+  const rec_zap  = m.rec * 100;                                             // cm
+
+  const okCls  = ok => ok ? 'calc-ok' : 'calc-danger';
+  const okTxt  = ok => ok ? 'Cumple ✓' : 'Falla — aumentar espesor ⚠';
+
+  // ── PANTALLA (stem) ─────────────────────────────────────────
+  const stemBlock = `<div class="calc-block pesos">
+<span class="btitle" style="color:#9a80f0;">① Pantalla — Voladizo en base (NCh430 §3)</span>
+<strong>Combinación LRFD (U = 1.6H):</strong>
+  M_serv = ½·Ka·γ·Hs³/3 + Ka·q·Hs²/2
+         = <strong>${f2(res.M_base)} kN·m/m</strong>
+  Mu_stem = 1.6 · M_serv
+          = 1.6 · ${f2(res.M_base)}
+          = <strong>${f2(res.Mu_stem)} kN·m/m</strong>
+  Vu_stem = 1.6 · V_serv
+          = <strong>${f2(res.Vu_stem)} kN/m</strong>
+
+<hr class="calc-sep">
+<strong>Peralte efectivo (rec = ${rec_pant} cm, barra Ø12):</strong>
+  d = t − rec − 6mm
+    = ${(g.t_muro*100).toFixed(0)} − ${rec_pant} − 0.6
+    = <strong>${(res.d_stem*100).toFixed(1)} cm</strong>
+
+<hr class="calc-sep">
+<strong>Diseño flexión (φ_flex = 0.90):</strong>
+  Rn = Mu / (φ·b·d²·1000)  [MPa]
+     = ${f2(res.Mu_stem)} / (0.90·${f3(res.d_stem)}²·1000)
+     = ${f3((res.Mu_stem/0.9)/(res.d_stem*res.d_stem*1000))} MPa
+
+  ρ_req = 0.85·f'c/fy·(1−√(1−2Rn/0.85f'c))
+  ρ_min = 0.0015 (barras ≤ Ø16, NCh430 §14.3)
+  ρ = max(ρ_req, ρ_min)
+
+  As_req = ρ·b·d
+         = <strong>${f2(res.As_req)} cm²/m</strong>
+
+<hr class="calc-sep">
+<strong>Verificación corte (φVc ≥ Vu):</strong>
+  φVc = 0.75·0.17·√f'c·b·d
+      = 0.75·0.17·√${fc}·1000·${f3(res.d_stem)}
+      = <strong>${f2(res.φVc_stem)} kN/m</strong>
+  Vu  = <strong>${f2(res.Vu_stem)} kN/m</strong>
+  → <span class="${okCls(res.shear_ok_stem)}">${okTxt(res.shear_ok_stem)}</span>
+</div>`;
+
+  // ── ZAPATA PUNTA (toe) ──────────────────────────────────────
+  const toeBlock = `<div class="calc-block pa">
+<span class="btitle" style="color:#f8a030;">② Punta (Toe) — Voladizo ascendente (NCh430 §4.1)</span>
+<strong>Presiones en punta:</strong>
+  q(0)      = <strong>${f1(res.q_punta)} kPa</strong>  (extremo punta)
+  q(B_toe)  = <strong>${f1(res.q_carA)} kPa</strong>  (cara anterior pantalla)
+
+  Carga neta ↑ = q − γc·Hf:
+    w(0)     = ${f1(res.q_punta)} − ${m.gc}·${g.Hf} = <strong>${f1(res.w_toe_0)} kPa</strong>
+    w(B_toe) = ${f1(res.q_carA)} − ${m.gc}·${g.Hf} = <strong>${f1(res.w_toe_A)} kPa</strong>
+
+<hr class="calc-sep">
+<strong>Mu punta = 1.6·B_toe²/6·(2w₀ + wₐ):</strong>
+  = 1.6·${g.B_toe}²/6·(2·${f1(res.w_toe_0)}+${f1(res.w_toe_A)})
+  = <strong>${f2(res.Mu_toe)} kN·m/m</strong>
+
+<strong>As punta (acero cara inferior):</strong>
+  d_zap = Hf − rec − 6mm
+        = ${(g.Hf*100).toFixed(0)} − ${rec_zap} − 0.6
+        = <strong>${(res.d_zap*100).toFixed(1)} cm</strong>
+  As_punta = <strong>${f2(res.As_toe)} cm²/m</strong>
+
+<strong>Verificación corte:</strong>
+  φVc = <strong>${f2(res.φVc_zap)} kN/m</strong>
+  Vu  = <strong>${f2(res.Vu_toe)} kN/m</strong>
+  → <span class="${okCls(res.shear_ok_toe)}">${okTxt(res.shear_ok_toe)}</span>
+</div>`;
+
+  // ── ZAPATA TALÓN (heel) ─────────────────────────────────────
+  const heelBlock = `<div class="calc-block q">
+<span class="btitle" style="color:#58a6ff;">③ Talón (Heel) — Voladizo descendente (NCh430 §4.2)</span>
+<strong>Carga descendente total:</strong>
+  w↓ = γ·Hs + γc·Hf + q
+     = ${s.gamma}·${f2(res.H_stem)} + ${m.gc}·${g.Hf} + ${RW.loads.qSobrecarga}
+     = <strong>${f1(res.w_down)} kPa</strong>
+
+<strong>Presiones ascendentes en talón:</strong>
+  q(cara post) = <strong>${f1(res.q_carB)} kPa</strong>
+  q(talón)     = <strong>${f1(res.q_talon)} kPa</strong>
+
+  Neto descendente:
+    w_B = ${f1(res.w_down)} − ${f1(res.q_carB)} = <strong>${f1(res.w_heel_B)} kPa</strong>
+    w_T = ${f1(res.w_down)} − ${f1(res.q_talon)} = <strong>${f1(res.w_heel_T)} kPa</strong>
+
+<hr class="calc-sep">
+<strong>Mu talón = 1.6·B_talón²/6·(w_B + 2w_T):</strong>
+  = 1.6·${f2(res.B_talon)}²/6·(${f1(res.w_heel_B)}+2·${f1(res.w_heel_T)})
+  = <strong>${f2(res.Mu_heel)} kN·m/m</strong>
+
+<strong>As talón (acero cara superior):</strong>
+  As_talón = <strong>${f2(res.As_heel)} cm²/m</strong>
+
+<strong>Verificación corte:</strong>
+  φVc = <strong>${f2(res.φVc_zap)} kN/m</strong>
+  Vu  = <strong>${f2(res.Vu_heel)} kN/m</strong>
+  → <span class="${okCls(res.shear_ok_heel)}">${okTxt(res.shear_ok_heel)}</span>
+</div>`;
+
+  document.getElementById('mat-breakdown').innerHTML =
+    stemBlock + toeBlock + heelBlock;
+}
+
+// ══════════════════════════════════════════════════════════════
+// PDF EXPORT
+// ══════════════════════════════════════════════════════════════
+function exportPDF() {
+  const res = RW.results;
+  if (!res) { alert('Ejecuta el cálculo primero.'); return; }
+
+  const g  = RW.geometry;
+  const s  = RW.soil;
+  const m  = RW.materials;
+
+  const f1 = v => (+v).toFixed(1);
+  const f2 = v => (+v).toFixed(2);
+
+  // ── Bar selection (Ø10 mm = 0.785 cm²/bar) ───────────────
+  const Abar10 = Math.PI * 25 / 100;   // 0.7854 cm²
+  function pickBars(As_req) {
+    for (const sp of [25, 20, 15, 12.5, 10]) {
+      const prov = Abar10 / (sp / 100);
+      if (prov >= As_req) return { phi: 10, sp, prov: +prov.toFixed(2) };
+    }
+    return { phi: 10, sp: 10, prov: +(Abar10 * 10).toFixed(2) };
+  }
+  const B1 = pickBars(res.As_req);
+  const B2 = { phi: 10, sp: 15, prov: +(Abar10 / 0.15).toFixed(2),
+               req: +(0.0020 * g.t_muro * 10000).toFixed(2) };
+  const B3 = pickBars(res.As_toe);
+  const B4 = pickBars(res.As_heel);
+
+  // ── SVG helpers ───────────────────────────────────────────
+  function dimH(x1, x2, y, txt, off) {
+    off = off || 18;
+    const mid = (x1 + x2) / 2;
+    return `<g stroke="#0055a0" stroke-width="0.7" fill="none">
+  <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}"/>
+  <line x1="${x1}" y1="${y-5}" x2="${x1}" y2="${y+5}"/>
+  <line x1="${x2}" y1="${y-5}" x2="${x2}" y2="${y+5}"/>
+</g><text x="${mid}" y="${y+off}" text-anchor="middle" fill="#0055a0" font-size="9" font-family="Arial">${txt}</text>`;
+  }
+  function dimV(x, y1, y2, txt) {
+    const mid = (y1 + y2) / 2;
+    return `<g stroke="#0055a0" stroke-width="0.7" fill="none">
+  <line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}"/>
+  <line x1="${x-5}" y1="${y1}" x2="${x+5}" y2="${y1}"/>
+  <line x1="${x-5}" y1="${y2}" x2="${x+5}" y2="${y2}"/>
+</g><text x="${x+7}" y="${mid+3}" fill="#0055a0" font-size="9" font-family="Arial">${txt}</text>`;
+  }
+
+  // ── CROSS-SECTION SVG ─────────────────────────────────────
+  const sc   = 220;   // px/m
+  const PLcs = 75, PRcs = 125, PTcs = 50, PBcs = 95;
+  const lsCS = 0.42;  // m left soil shown
+  const rsCS = 0.52;  // m right soil shown
+
+  const xToe   = PLcs + lsCS * sc;
+  const xWallL = xToe  + g.B_toe     * sc;
+  const xWallR = xWallL + g.t_muro   * sc;
+  const xHeel  = xWallR + res.B_talon * sc;
+  const xRSEnd = xHeel  + rsCS * sc;
+
+  const yCrown   = PTcs;
+  const yNTN     = PTcs + g.H_libre   * sc;
+  const yTopZap  = PTcs + res.H_stem  * sc;
+  const yBase    = PTcs + res.H_total * sc;
+
+  const csSW = Math.ceil(PLcs + (lsCS + g.B_zap + rsCS) * sc + PRcs);
+  const csSH = Math.ceil(PTcs + res.H_total * sc + PBcs);
+
+  const rp = m.rec_pant || 0.05;
+  const rz = m.rec;
+
+  const xB1main = xWallR - rp * sc;
+  const xB1sec  = xWallL + rp * sc;
+  const yB3     = yBase   - rz * sc;
+  const yB4     = yTopZap + rz * sc;
+  // Barbacana level: 20 cm ABOVE free-side NTN so water exits in open air
+  const yBarb   = Math.round(yNTN - 0.20 * sc);
+
+  // Horizontal bar dots in cross-section
+  const horizDotsCS = Array.from({length: 7}).map((_, i) => {
+    const yy = yCrown + (i + 0.5) * res.H_stem * sc / 7;
+    // Puntos en cara libre (xB1sec) y cara retenida (xB1main)
+    return `
+      <circle cx="${xB1sec}" cy="${yy}" r="3" fill="#dd4400" stroke="#992200" stroke-width="0.6"/>
+      <circle cx="${xB1main}" cy="${yy}" r="3" fill="#dd4400" stroke="#992200" stroke-width="0.6"/>
+    `;
+  }).join('');
+
+  const csSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${csSW}" height="${csSH}" viewBox="0 0 ${csSW} ${csSH}">
+<defs>
+  <pattern id="cs-hc" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+    <line x1="0" y1="0" x2="0" y2="8" stroke="#909090" stroke-width="0.9"/>
+  </pattern>
+  <pattern id="cs-hg" patternUnits="userSpaceOnUse" width="12" height="12">
+    <circle cx="3" cy="3" r="1.8" fill="#9a7322" opacity="0.55"/>
+    <circle cx="9" cy="9" r="1.8" fill="#9a7322" opacity="0.55"/>
+    <circle cx="3" cy="9" r="1.2" fill="#9a7322" opacity="0.35"/>
+    <circle cx="9" cy="3" r="1.2" fill="#9a7322" opacity="0.35"/>
+  </pattern>
+  <pattern id="cs-hb" patternUnits="userSpaceOnUse" width="10" height="7">
+    <line x1="0" y1="3.5" x2="10" y2="3.5" stroke="#b87820" stroke-width="0.9" opacity="0.8"/>
+  </pattern>
+  <pattern id="cs-hn" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(135)">
+    <line x1="0" y1="0" x2="0" y2="8" stroke="#4a7a38" stroke-width="0.9" opacity="0.55"/>
+  </pattern>
+</defs>
+<rect width="${csSW}" height="${csSH}" fill="#f9f9f7"/>
+<!-- Terreno natural (libre) — cubre desde NTN hasta base, desde PLcs hasta cara libre del muro -->
+<rect x="${PLcs}" y="${yNTN}" width="${xWallL-PLcs}" height="${yBase-yNTN}" fill="url(#cs-hn)"/>
+<rect x="${PLcs}" y="${yNTN}" width="${xWallL-PLcs}" height="${yBase-yNTN}" fill="rgba(74,122,56,0.10)"/>
+<!-- Base estabilizada -->
+<rect x="${xToe}" y="${yBase}" width="${g.B_zap*sc}" height="22" fill="url(#cs-hb)"/>
+<rect x="${xToe}" y="${yBase}" width="${g.B_zap*sc}" height="22" fill="rgba(184,120,32,0.15)"/>
+<!-- Grava GP (retenida) -->
+<rect x="${xHeel}" y="${yCrown}" width="${rsCS*sc}" height="${yBase-yCrown}" fill="url(#cs-hg)"/>
+<rect x="${xHeel}" y="${yCrown}" width="${rsCS*sc}" height="${yBase-yCrown}" fill="rgba(154,115,34,0.08)"/>
+<rect x="${xWallR}" y="${yCrown}" width="${res.B_talon*sc}" height="${yTopZap-yCrown}" fill="url(#cs-hg)"/>
+<rect x="${xWallR}" y="${yCrown}" width="${res.B_talon*sc}" height="${yTopZap-yCrown}" fill="rgba(154,115,34,0.08)"/>
+<!-- Zapata -->
+<rect x="${xToe}" y="${yTopZap}" width="${g.B_zap*sc}" height="${g.Hf*sc}" fill="#ffffff"/>
+<rect x="${xToe}" y="${yTopZap}" width="${g.B_zap*sc}" height="${g.Hf*sc}" fill="url(#cs-hc)"/>
+<rect x="${xToe}" y="${yTopZap}" width="${g.B_zap*sc}" height="${g.Hf*sc}" fill="rgba(180,180,180,0.22)" stroke="#383838" stroke-width="1.4"/>
+<!-- Pantalla -->
+<rect x="${xWallL}" y="${yCrown}" width="${g.t_muro*sc}" height="${res.H_stem*sc}" fill="#ffffff"/>
+<rect x="${xWallL}" y="${yCrown}" width="${g.t_muro*sc}" height="${res.H_stem*sc}" fill="url(#cs-hc)"/>
+<rect x="${xWallL}" y="${yCrown}" width="${g.t_muro*sc}" height="${res.H_stem*sc}" fill="rgba(180,180,180,0.22)" stroke="#383838" stroke-width="1.4"/>
+<!-- Impermeabilización trasdós -->
+<rect x="${xWallR-3}" y="${yCrown}" width="3" height="${res.H_stem*sc}" fill="#1a1a1a" opacity="0.75"/>
+<!-- NTN (libre) — llega hasta la cara libre del muro (xWallL) -->
+<line x1="${PLcs}" y1="${yNTN}" x2="${xWallL}" y2="${yNTN}" stroke="#1a6e1a" stroke-width="1.4" stroke-dasharray="7,4"/>
+<text x="${PLcs+3}" y="${yNTN-5}" fill="#1a6e1a" font-size="8.5" font-family="Arial">N.T.N. (libre)</text>
+<!-- Junta fría pantalla/zapata -->
+<line x1="${xWallL}" y1="${yTopZap}" x2="${xWallR}" y2="${yTopZap}" stroke="#990000" stroke-width="2" stroke-dasharray="3,3"/>
+<!-- B1: vertical bars -->
+<!-- B1 (Cara retenida) -->
+<line x1="${xB1main}" y1="${yCrown+rz*sc}" x2="${xB1main}" y2="${yB3-3}" stroke="#cc2222" stroke-width="3"/>
+<!-- Gancho arriba B1 -->
+<line x1="${xB1main}" y1="${yCrown+rz*sc}" x2="${xB1main-12}" y2="${yCrown+rz*sc}" stroke="#cc2222" stroke-width="3"/>
+<!-- Gancho anclaje abajo B1 (dobla hacia la punta) -->
+<line x1="${xB1main}" y1="${yB3-3}" x2="${xB1main-20}" y2="${yB3-3}" stroke="#cc2222" stroke-width="3"/>
+
+<!-- B1* (Cara libre) -->
+<line x1="${xB1sec}" y1="${yCrown+rz*sc}" x2="${xB1sec}" y2="${yB3-3}" stroke="#cc2222" stroke-width="2.5"/>
+<!-- Gancho arriba B1* -->
+<line x1="${xB1sec}" y1="${yCrown+rz*sc}" x2="${xB1sec+12}" y2="${yCrown+rz*sc}" stroke="#cc2222" stroke-width="2.5"/>
+<!-- Gancho anclaje abajo B1* (dobla hacia el talón) -->
+<line x1="${xB1sec}" y1="${yB3-3}" x2="${xB1sec+20}" y2="${yB3-3}" stroke="#cc2222" stroke-width="2.5"/>
+<!-- B2: horizontal bar dots -->
+${horizDotsCS}
+<!-- ══ BARBACANA Ø75mm PVC ══ atraviesa la PANTALLA sobre el NTN libre ══
+     Nivel: ${Math.round((g.H_libre-0.20)*100)} cm bajo coronación = 20 cm sobre NTN libre
+     El agua sale al AIRE LIBRE en el lado libre, no queda enterrada. -->
+<!-- Fondo blanco en el canal (abre hueco en el hormigón visualmente) -->
+<rect x="${xWallL+1}" y="${yBarb-7}" width="${g.t_muro*sc-2}" height="14" fill="white" opacity="0.80"/>
+<!-- Tubo dentro del muro -->
+<line x1="${xWallL}" y1="${yBarb}" x2="${xWallR}" y2="${yBarb}" stroke="#1a55cc" stroke-width="8" opacity="0.12"/>
+<line x1="${xWallL}" y1="${yBarb}" x2="${xWallR}" y2="${yBarb}" stroke="#1a55cc" stroke-width="2.5" stroke-dasharray="6,3"/>
+<line x1="${xWallL}" y1="${yBarb-5}" x2="${xWallR}" y2="${yBarb-5}" stroke="#1a55cc" stroke-width="0.7" opacity="0.6"/>
+<line x1="${xWallL}" y1="${yBarb+5}" x2="${xWallR}" y2="${yBarb+5}" stroke="#1a55cc" stroke-width="0.7" opacity="0.6"/>
+<!-- Sección circular cara retenida (agua entra desde la grava) -->
+<circle cx="${xWallR}" cy="${yBarb}" r="8.5" fill="rgba(210,228,255,0.92)" stroke="#1a44bb" stroke-width="1.8"/>
+<!-- Sección circular cara libre (agua SALE sobre el NTN — al exterior) -->
+<circle cx="${xWallL}" cy="${yBarb}" r="8.5" fill="rgba(210,228,255,0.92)" stroke="#1a44bb" stroke-width="1.8"/>
+<!-- Flecha de drenaje (hacia el exterior libre) -->
+<line x1="${xWallL-10}" y1="${yBarb}" x2="${xWallL-38}" y2="${yBarb}" stroke="#0044cc" stroke-width="2.2"/>
+<polygon points="${xWallL-48},${yBarb} ${xWallL-36},${yBarb-5.5} ${xWallL-36},${yBarb+5.5}" fill="#0044cc"/>
+<!-- Etiquetas barbacana -->
+<text x="${xWallL-52}" y="${yBarb-16}" text-anchor="end" fill="#1a44bb" font-size="9" font-family="Arial" font-weight="bold">Barbacana PVC Ø75mm</text>
+<text x="${xWallL-52}" y="${yBarb-4}" text-anchor="end" fill="#0044cc" font-size="8" font-family="Arial">sale sobre NTN → drena al exterior</text>
+<!-- Línea vertical indicando cota sobre NTN -->
+<line x1="${xWallL-22}" y1="${yBarb+10}" x2="${xWallL-22}" y2="${yNTN-2}" stroke="#1a6e1a" stroke-width="0.9" stroke-dasharray="3,3"/>
+<text x="${xWallL-26}" y="${yBarb+26}" text-anchor="end" fill="#1a6e1a" font-size="7" font-family="Arial">20cm</text>
+<text x="${xWallL-26}" y="${yBarb+36}" text-anchor="end" fill="#1a6e1a" font-size="7" font-family="Arial">sobre NTN</text>
+
+<!-- ══ TUBO DREN Ø110mm PVC perforado ══ longitudinal sobre zapata, en filtro grava -->
+<!-- Se representa como TUBO (dos anillos concéntricos), no como barra de acero -->
+<circle cx="${xWallR+Math.round(res.B_talon*sc*0.30)}" cy="${yTopZap-13}" r="13" fill="rgba(240,248,255,0.9)" stroke="#556688" stroke-width="2"/>
+<circle cx="${xWallR+Math.round(res.B_talon*sc*0.30)}" cy="${yTopZap-13}" r="8"  fill="rgba(200,220,240,0.7)" stroke="#556688" stroke-width="0.8" stroke-dasharray="2,1"/>
+<text x="${xWallR+Math.round(res.B_talon*sc*0.30)}" y="${yTopZap-32}" text-anchor="middle" fill="#445577" font-size="7.5" font-family="Arial" font-weight="bold">Ø110mm</text>
+<text x="${xWallR+Math.round(res.B_talon*sc*0.30)}" y="${yTopZap-23}" text-anchor="middle" fill="#445577" font-size="7" font-family="Arial">dren PVC</text>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     ARMADURA ZAPATA — representación según convenio estructural
+     Barras en el plano de la sección → se ven como LÍNEAS HORIZONTALES
+     Barras perpendiculares (longitudinales) → se ven como CÍRCULOS/PUNTOS
+     ══════════════════════════════════════════════════════════════════ -->
+
+<!-- ── B3: Armadura INFERIOR punta (cara inferior, resiste momento +) ── -->
+<!-- La barra corre transversalmente de lado a lado -->
+<line x1="${xToe+rz*sc}" y1="${yB3}" x2="${xHeel-rz*sc}" y2="${yB3}" stroke="white" stroke-width="6" opacity="0.75"/>
+<line x1="${xToe+rz*sc}" y1="${yB3}" x2="${xHeel-rz*sc}" y2="${yB3}" stroke="#cc2222" stroke-width="3"/>
+<!-- Ganchos 90° apuntando hacia adentro de la masa (hacia arriba) -->
+<line x1="${xToe+rz*sc}" y1="${yB3}" x2="${xToe+rz*sc}" y2="${yB3-20}" stroke="#cc2222" stroke-width="3"/>
+<line x1="${xHeel-rz*sc}" y1="${yB3}" x2="${xHeel-rz*sc}" y2="${yB3-20}" stroke="#cc2222" stroke-width="3"/>
+<!-- Puntos longitudinales B3 (exactamente 6) -->
+${Array.from({length: 6}).map((_, i) => {
+  const xLeft = xToe + rz*sc + 15;
+  const xRight = xHeel - rz*sc - 15;
+  const cx = xLeft + i * (xRight - xLeft) / 5;
+  return `<circle cx="${cx}" cy="${yB3-4}" r="3" fill="#dd4400" stroke="#992200" stroke-width="0.6"/>`;
+}).join('')}
+<!-- Anotación directa sobre la barra -->
+<rect x="${(xToe+xHeel)/2-28}" y="${yB3+8}" width="56" height="13" fill="#ffffff" rx="2"/>
+<text x="${(xToe+xHeel)/2}" y="${yB3+18}" text-anchor="middle" fill="#880000" font-size="8.5" font-family="Inter,Arial,sans-serif" font-weight="bold">B3 Ø${B3.phi}@${B3.sp}</text>
+
+<!-- ── B4: Armadura SUPERIOR talón (cara superior, resiste momento -) ── -->
+<!-- La barra corre transversalmente de lado a lado -->
+<line x1="${xToe+rz*sc}" y1="${yB4}" x2="${xHeel-rz*sc}" y2="${yB4}" stroke="white" stroke-width="6" opacity="0.75"/>
+<line x1="${xToe+rz*sc}" y1="${yB4}" x2="${xHeel-rz*sc}" y2="${yB4}" stroke="#cc2222" stroke-width="3"/>
+<!-- Ganchos 90° apuntando hacia adentro de la masa (hacia abajo) -->
+<line x1="${xHeel-rz*sc}" y1="${yB4}" x2="${xHeel-rz*sc}" y2="${yB4+20}" stroke="#cc2222" stroke-width="3"/>
+<line x1="${xToe+rz*sc}" y1="${yB4}" x2="${xToe+rz*sc}" y2="${yB4+20}" stroke="#cc2222" stroke-width="3"/>
+<!-- Puntos longitudinales B4 (exactamente 6) -->
+${Array.from({length: 6}).map((_, i) => {
+  const xLeft = xToe + rz*sc + 15;
+  const xRight = xHeel - rz*sc - 15;
+  const cx = xLeft + i * (xRight - xLeft) / 5;
+  return `<circle cx="${cx}" cy="${yB4+4}" r="3" fill="#dd4400" stroke="#992200" stroke-width="0.6"/>`;
+}).join('')}
+<!-- Anotación directa sobre la barra -->
+<rect x="${(xToe+xHeel)/2-28}" y="${yB4-22}" width="56" height="13" fill="#ffffff" rx="2"/>
+<text x="${(xToe+xHeel)/2}" y="${yB4-12}" text-anchor="middle" fill="#880000" font-size="8.5" font-family="Inter,Arial,sans-serif" font-weight="bold">B4 Ø${B4.phi}@${B4.sp}</text>
+<!-- Rebar labels -->
+<text x="${xB1main+6}" y="${yCrown+60}" fill="#cc2222" font-size="8.5" font-family="Arial" font-weight="bold">B1 Ø${B1.phi}@${B1.sp}</text>
+<text x="${xB1sec-6}" y="${yCrown+90}" text-anchor="end" fill="#cc2222" font-size="8.5" font-family="Arial" font-weight="bold">B1* Ø${B1.phi}@${B1.sp}</text>
+<text x="${xB1sec-6}" y="${yCrown+45}" text-anchor="end" fill="#dd4400" font-size="8.5" font-family="Arial" font-weight="bold">B2 Ø${B2.phi}@${B2.sp} ●</text>
+<!-- Zone labels -->
+<text x="${PLcs+4}" y="${(yNTN+yBase)/2+4}" fill="#2a5c1a" font-size="8.5" font-family="Arial" font-style="italic">T.Natural</text>
+<text x="${xHeel+5}" y="${(yCrown+yTopZap)/2+4}" fill="#7a5c18" font-size="9" font-family="Arial" font-style="italic">Grava GP</text>
+<text x="${xToe+3}" y="${yBase+18}" fill="#9a6a10" font-size="8" font-family="Arial">Base estabilizada CBR≈80%</text>
+<!-- Dimension lines bottom -->
+${dimH(xToe,  xWallL, yBase+30, 'B_toe='+f2(g.B_toe)+'m')}
+${dimH(xWallL,xWallR, yBase+30, (g.t_muro*100).toFixed(0)+'cm')}
+${dimH(xWallR,xHeel,  yBase+30, 'B_tal='+f2(res.B_talon)+'m')}
+${dimH(xToe,  xHeel,  yBase+62, 'B_zap = '+f2(g.B_zap)+' m')}
+<!-- Dimension lines right -->
+${dimV(xRSEnd+10, yCrown,   yNTN,    'H_lib='+f2(g.H_libre)+'m')}
+${dimV(xRSEnd+10, yNTN,     yTopZap, 'H_emp='+f2(g.H_emp)+'m')}
+${dimV(xRSEnd+10, yTopZap,  yBase,   'Hf='+f2(g.Hf)+'m')}
+${dimV(xRSEnd+48, yCrown,   yTopZap, 'Hs='+f2(res.H_stem)+'m')}
+${dimV(xRSEnd+86, yCrown,   yBase,   'H='+f2(res.H_total)+'m')}
+<!-- Cover note -->
+<line x1="${xWallR}" y1="${yCrown+35}" x2="${xB1main}" y2="${yCrown+35}" stroke="#aaa" stroke-width="0.7" stroke-dasharray="2,2"/>
+<text x="${xWallR+2}" y="${yCrown+32}" fill="#888" font-size="7" font-family="Arial">rec=${(rp*100).toFixed(0)}cm</text>
+<!-- SVG title -->
+<text x="${csSW/2}" y="16" text-anchor="middle" fill="#111" font-size="11.5" font-family="Arial" font-weight="bold">PERFIL TRANSVERSAL — MURO DE CONTENCION</text>
+<text x="${csSW/2}" y="28" text-anchor="middle" fill="#555" font-size="8.5" font-family="Arial">Escala aprox. 1:${Math.round(1000/sc)} · f'c=${m.fc} MPa · phi=${s.phi}° · NCh3171+NCh430</text>
+</svg>`;
+
+  // ── LONGITUDINAL SVG ──────────────────────────────────────
+  const scH = 95;   // px/m horizontal
+  const scV = 200;  // px/m vertical
+  const PLlg = 35, PRlg = 95, PTlg = 38, PBlg = 82;
+
+  const lx0   = PLlg;
+  const lxEnd = PLlg + g.L * scH;
+  const lyCrown  = PTlg;
+  const lyNTN    = PTlg + g.H_libre  * scV;
+  const lyTopZap = PTlg + res.H_stem * scV;
+  const lyBase   = PTlg + res.H_total * scV;
+
+  const lgSW = Math.ceil(PLlg + g.L * scH + PRlg);
+  const lgSH = Math.ceil(PTlg + res.H_total * scV + PBlg);
+
+  // Barbacanas: @1.5m starting at 0.75m
+  const nBarb = Math.max(1, Math.floor((g.L - 0.75) / 1.5) + 1);
+  const barbXs = Array.from({length: nBarb}, (_, i) => lx0 + (0.75 + i * 1.5) * scH);
+
+  // B2 horizontal bars in longitudinal
+  const nHorizLg = Math.floor(res.H_stem / (B2.sp / 100));
+  const horiz_Y_lg = Array.from({length: nHorizLg}, (_, i) =>
+    lyCrown + (i + 0.5) * res.H_stem * scV / nHorizLg
+  );
+
+  // B1 vertical bars in longitudinal (draw all, they're thin)
+  const nVert = Math.floor(g.L / (B1.sp / 100));
+  const vertBarsLg = Array.from({length: nVert}, (_, i) =>
+    lx0 + (i + 0.5) * g.L * scH / nVert
+  );
+
+  const longSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${lgSW}" height="${lgSH}" viewBox="0 0 ${lgSW} ${lgSH}">
+<defs>
+  <pattern id="lg-hc" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+    <line x1="0" y1="0" x2="0" y2="8" stroke="#909090" stroke-width="0.9"/>
+  </pattern>
+  <pattern id="lg-hg" patternUnits="userSpaceOnUse" width="12" height="12">
+    <circle cx="3" cy="3" r="1.8" fill="#9a7322" opacity="0.5"/>
+    <circle cx="9" cy="9" r="1.8" fill="#9a7322" opacity="0.5"/>
+  </pattern>
+</defs>
+<rect width="${lgSW}" height="${lgSH}" fill="#f9f9f7"/>
+<!-- Relleno grava GP (side view of retained fill) -->
+<rect x="${lx0}" y="${lyCrown}" width="${g.L*scH}" height="${lyTopZap-lyCrown}" fill="url(#lg-hg)"/>
+<rect x="${lx0}" y="${lyCrown}" width="${g.L*scH}" height="${lyTopZap-lyCrown}" fill="rgba(154,115,34,0.07)"/>
+<!-- Zapata -->
+<rect x="${lx0}" y="${lyTopZap}" width="${g.L*scH}" height="${g.Hf*scV}" fill="#ffffff"/>
+<rect x="${lx0}" y="${lyTopZap}" width="${g.L*scH}" height="${g.Hf*scV}" fill="url(#lg-hc)"/>
+<rect x="${lx0}" y="${lyTopZap}" width="${g.L*scH}" height="${g.Hf*scV}" fill="rgba(180,180,180,0.22)" stroke="#383838" stroke-width="1.5"/>
+<!-- Pantalla (front face elevation) -->
+<rect x="${lx0}" y="${lyCrown}" width="${g.L*scH}" height="${res.H_stem*scV}" fill="#ffffff"/>
+<rect x="${lx0}" y="${lyCrown}" width="${g.L*scH}" height="${res.H_stem*scV}" fill="url(#lg-hc)"/>
+<rect x="${lx0}" y="${lyCrown}" width="${g.L*scH}" height="${res.H_stem*scV}" fill="rgba(180,180,180,0.18)" stroke="#383838" stroke-width="1.5"/>
+<!-- Junta fría (J.F.) -->
+<line x1="${lx0}" y1="${lyTopZap}" x2="${lxEnd}" y2="${lyTopZap}" stroke="#990000" stroke-width="2" stroke-dasharray="6,3"/>
+<text x="${lxEnd+3}" y="${lyTopZap+4}" fill="#990000" font-size="8" font-family="Inter,Arial,sans-serif">J.F.</text>
+<!-- NTN line -->
+<line x1="${lx0-20}" y1="${lyNTN}" x2="${lxEnd}" y2="${lyNTN}" stroke="#1a6e1a" stroke-width="1.4" stroke-dasharray="6,4"/>
+<text x="${lx0-33}" y="${lyNTN+4}" fill="#1a6e1a" font-size="7.5" font-family="Inter,Arial,sans-serif">NTN</text>
+<!-- B2 horizontal bars (dashed lines) -->
+${horiz_Y_lg.map(y =>
+    `<line x1="${lx0+3}" y1="${y}" x2="${lxEnd-3}" y2="${y}" stroke="#dd4400" stroke-width="1.5" stroke-dasharray="12,5" opacity="0.85"/>`
+  ).join('\n')}
+<!-- B1 vertical bars (thin lines) -->
+${vertBarsLg.map(x =>
+    `<line x1="${x}" y1="${lyCrown+4}" x2="${x}" y2="${lyTopZap-4}" stroke="#cc2222" stroke-width="1.1" opacity="0.7"/>`
+  ).join('\n')}
+<!-- Barbacanas -->
+${barbXs.map(bx =>
+    `<circle cx="${bx}" cy="${lyNTN - 0.20 * scV}" r="6.5" fill="#fff" stroke="#555" stroke-width="1.3"/>
+<text x="${bx}" y="${lyNTN - 0.20 * scV + 15}" text-anchor="middle" fill="#444" font-size="7" font-family="Inter,Arial,sans-serif">Ø75</text>`
+  ).join('\n')}
+<!-- Barbacana spacing dim -->
+${nBarb>=2 ? dimH(barbXs[0], barbXs[1], lyBase+35, '@1.50m', 14) : ''}
+${dimH(lx0, barbXs[0], lyBase+35, '0.75m', 14)}
+<!-- Bar labels -->
+<text x="${lx0+6}" y="${horiz_Y_lg[0]-5}" fill="#dd4400" font-size="8" font-family="Inter,Arial,sans-serif" font-weight="bold">B2 — Ø${B2.phi}@${B2.sp}cm (horiz.)</text>
+<text x="${lx0+6}" y="${lyCrown+17}" fill="#cc2222" font-size="8" font-family="Inter,Arial,sans-serif" font-weight="bold">B1 — Ø${B1.phi}@${B1.sp}cm (vert.)</text>
+<!-- Dim lines bottom -->
+${dimH(lx0, lxEnd, lyBase+58, 'L = '+f2(g.L)+' m', 16)}
+<!-- Dim lines right -->
+${dimV(lxEnd+12, lyCrown,  lyNTN,    f2(g.H_libre)+'m')}
+${dimV(lxEnd+12, lyNTN,    lyTopZap, f2(g.H_emp)+'m')}
+${dimV(lxEnd+12, lyTopZap, lyBase,   f2(g.Hf)+'m')}
+${dimV(lxEnd+52, lyCrown,  lyBase,   'H='+f2(res.H_total)+'m')}
+<!-- SVG title -->
+<text x="${lgSW/2}" y="14" text-anchor="middle" fill="#111" font-size="11.5" font-family="Inter,Arial,sans-serif" font-weight="bold">PERFIL LONGITUDINAL — MURO DE CONTENCION  L = ${f2(g.L)} m</text>
+<text x="${lgSW/2}" y="26" text-anchor="middle" fill="#555" font-size="8.5" font-family="Inter,Arial,sans-serif">Vista cara libre · Barbacanas Ø75@150cm · J.F. = Junta Fria</text>
+</svg>`;
+
+  // ── PLAN VIEW SVG (Footing rebars) ───────────────────────────────────
+  const scP = 120; // px/m for plan view
+  const PLp = 80, PRp = 80, PTp = 80, PBp = 80;
+  
+  const pw = g.L * scP;
+  const ph = g.B_zap * scP;
+  
+  const pSW = Math.ceil(PLp + pw + PRp);
+  const pSH = Math.ceil(PTp + ph + PBp);
+  
+  const px0 = PLp;
+  const py0 = PTp;
+  
+  const pyWallL = py0 + g.B_toe * scP;
+  const pyWallR = pyWallL + g.t_muro * scP;
+  
+  // Rebar calculations for plan view
+  const numB3 = Math.floor(g.L / (B3.sp / 100)); // transverse (vertical in plan view)
+  const numB4 = Math.floor(g.L / (B4.sp / 100));
+  const numLong = 3;
+  
+  const planSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pSW}" height="${pSH}" viewBox="0 0 ${pSW} ${pSH}">
+<defs>
+  <pattern id="plan-hc" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+    <line x1="0" y1="0" x2="0" y2="8" stroke="#ccc" stroke-width="0.9"/>
+  </pattern>
+</defs>
+<rect width="${pSW}" height="${pSH}" fill="#f9f9f7"/>
+<!-- Zapata outline -->
+<rect x="${px0}" y="${py0}" width="${pw}" height="${ph}" fill="#ffffff" stroke="#333" stroke-width="2"/>
+<rect x="${px0}" y="${py0}" width="${pw}" height="${ph}" fill="url(#plan-hc)" opacity="0.3"/>
+
+<!-- B3 (Punta/Toe) bottom layer transverse -->
+${Array.from({length: numB3}).map((_, i) => {
+  const x = px0 + (i + 0.5) * (pw / numB3);
+  return `<line x1="${x}" y1="${py0 + rz*scP}" x2="${x}" y2="${pyWallL - rz*scP}" stroke="#bb2200" stroke-width="2"/>`;
+}).join('\n')}
+
+<!-- B4 (Talón/Heel) top layer transverse -->
+${Array.from({length: numB4}).map((_, i) => {
+  const x = px0 + (i + 0.5) * (pw / numB4);
+  return `<line x1="${x}" y1="${pyWallR + rz*scP}" x2="${x}" y2="${py0 + ph - rz*scP}" stroke="#0044bb" stroke-width="2"/>`;
+}).join('\n')}
+
+<!-- Toe longitudinal -->
+<line x1="${px0 + rz*scP}" y1="${py0 + g.B_toe*scP/2}" x2="${px0 + pw - rz*scP}" y2="${py0 + g.B_toe*scP/2}" stroke="#dd4400" stroke-width="1.5"/>
+<line x1="${px0 + rz*scP}" y1="${py0 + rz*scP + 5}" x2="${px0 + pw - rz*scP}" y2="${py0 + rz*scP + 5}" stroke="#dd4400" stroke-width="1.5"/>
+<line x1="${px0 + rz*scP}" y1="${pyWallL - rz*scP - 5}" x2="${px0 + pw - rz*scP}" y2="${pyWallL - rz*scP - 5}" stroke="#dd4400" stroke-width="1.5"/>
+<!-- B5 label on toe longitudinal bar (center of span) -->
+<line x1="${px0 + pw*0.62}" y1="${py0 + g.B_toe*scP/2}" x2="${px0 + pw*0.62}" y2="${py0 + g.B_toe*scP/2 - 18}" stroke="#dd4400" stroke-width="1" marker-end="url(#arr-toe)"/>
+<rect x="${px0 + pw*0.62 - 38}" y="${py0 + g.B_toe*scP/2 - 32}" width="76" height="14" rx="2" fill="#fff" opacity="0.88"/>
+<text x="${px0 + pw*0.62}" y="${py0 + g.B_toe*scP/2 - 21}" text-anchor="middle" fill="#cc3300" font-size="8.5" font-family="Inter,Arial,sans-serif" font-weight="bold">B5 — Ø${B2.phi}@${B2.sp} (Long.)</text>
+
+<!-- Heel longitudinal -->
+<line x1="${px0 + rz*scP}" y1="${pyWallR + res.B_talon*scP/2}" x2="${px0 + pw - rz*scP}" y2="${pyWallR + res.B_talon*scP/2}" stroke="#2266dd" stroke-width="1.5"/>
+<line x1="${px0 + rz*scP}" y1="${pyWallR + rz*scP + 5}" x2="${px0 + pw - rz*scP}" y2="${pyWallR + rz*scP + 5}" stroke="#2266dd" stroke-width="1.5"/>
+<line x1="${px0 + rz*scP}" y1="${py0 + ph - rz*scP - 5}" x2="${px0 + pw - rz*scP}" y2="${py0 + ph - rz*scP - 5}" stroke="#2266dd" stroke-width="1.5"/>
+<!-- B5 label on heel longitudinal bar (center of span) -->
+<line x1="${px0 + pw*0.62}" y1="${pyWallR + res.B_talon*scP/2}" x2="${px0 + pw*0.62}" y2="${pyWallR + res.B_talon*scP/2 + 18}" stroke="#2266dd" stroke-width="1"/>
+<rect x="${px0 + pw*0.62 - 38}" y="${pyWallR + res.B_talon*scP/2 + 18}" width="76" height="14" rx="2" fill="#fff" opacity="0.88"/>
+<text x="${px0 + pw*0.62}" y="${pyWallR + res.B_talon*scP/2 + 29}" text-anchor="middle" fill="#1144bb" font-size="8.5" font-family="Inter,Arial,sans-serif" font-weight="bold">B5 — Ø${B2.phi}@${B2.sp} (Long.)</text>
+
+
+<!-- Pantalla outline (dashed since it's above) -->
+<rect x="${px0}" y="${pyWallL}" width="${pw}" height="${g.t_muro*scP}" fill="rgba(200,200,200,0.5)" stroke="#555" stroke-width="1.5" stroke-dasharray="8,4"/>
+<text x="${px0 + pw/2}" y="${pyWallL + g.t_muro*scP/2 + 4}" text-anchor="middle" fill="#333" font-size="12" font-family="Inter,Arial,sans-serif" font-weight="bold">PANTALLA MURO</text>
+
+<!-- Legend & Labels -->
+<rect x="${px0 + 5}" y="${py0 + rz*scP + 5}" width="220" height="32" fill="#ffffff" rx="2" opacity="0.85"/>
+<text x="${px0 + 10}" y="${py0 + rz*scP + 18}" fill="#880000" font-size="9" font-family="Inter,Arial,sans-serif" font-weight="bold">Principal Transversal: B3 Ø${B3.phi}@${B3.sp}</text>
+<text x="${px0 + 10}" y="${py0 + rz*scP + 30}" fill="#aa4400" font-size="8" font-family="Inter,Arial,sans-serif">Rep. Longitudinal: B5 Ø${B2.phi}@${B2.sp}</text>
+
+<rect x="${px0 + 5}" y="${py0 + ph - rz*scP - 37}" width="220" height="32" fill="#ffffff" rx="2" opacity="0.85"/>
+<text x="${px0 + 10}" y="${py0 + ph - rz*scP - 24}" fill="#002288" font-size="9" font-family="Inter,Arial,sans-serif" font-weight="bold">Principal Transversal: B4 Ø${B4.phi}@${B4.sp}</text>
+<text x="${px0 + 10}" y="${py0 + ph - rz*scP - 12}" fill="#2266dd" font-size="8" font-family="Inter,Arial,sans-serif">Rep. Longitudinal: B5 Ø${B2.phi}@${B2.sp}</text>
+
+<!-- Dims -->
+${dimH(px0, px0+pw, py0 + ph + 25, 'L = '+f2(g.L)+' m')}
+${dimV(px0+pw+20, py0, pyWallL, 'Pie = '+f2(g.B_toe)+' m')}
+${dimV(px0+pw+20, pyWallL, pyWallR, f2(g.t_muro)+' m')}
+${dimV(px0+pw+20, pyWallR, py0+ph, 'Talón = '+f2(res.B_talon)+' m')}
+${dimV(px0+pw+55, py0, py0+ph, 'B = '+f2(g.B_zap)+' m')}
+
+<text x="${pSW/2}" y="25" text-anchor="middle" fill="#111" font-size="12" font-family="Inter,Arial,sans-serif" font-weight="bold">VISTA EN PLANTA — ARMADURAS DE LA ZAPATA</text>
+</svg>`;
+
+  // ── 4) DETALLE DE ANCLAJE (Splice SVG) ────────────────────────
+  const spW = 1150;
+  const spH = 750;
+  const scZ = 350; // pixels per meter
+  const cX = spW / 2;
+  const cY = 400; // Junta de construcción (Construction joint y-coord)
+  
+  const wThick = g.t_muro * scZ; // wall thickness in px
+  const zHeight = g.Hf * scZ; // zapata height in px
+  
+  // Recubrimientos
+  const recW = 0.04 * scZ; // 4cm recubrimiento retenida
+  const recL = 0.03 * scZ; // 3cm recubrimiento libre
+  const recZ = 0.05 * scZ; // 5cm zapata
+  
+  // Coordenadas de bordes de muro
+  const wLeft = cX - wThick/2;  // Cara Libre (Punta)
+  const wRight = cX + wThick/2; // Cara Retenida (Talón)
+  
+  // Bordes reales de zapata
+  const zLeft = wLeft - g.B_toe * scZ;
+  const zRight = wRight + res.B_talon * scZ;
+  const zWidth = zRight - zLeft;
+
+  // Posiciones de barras verticales
+  const xB1_free = wLeft + recL;  // B1* (Azul)
+  const xB1_ret = wRight - recW;  // B1  (Rojo)
+
+  // Ldh real requerido es ~20-25cm para barras Ø10-Ø12. Limitamos al espacio físico disponible.
+  const reqLdh = 0.25 * scZ; // 25 cm
+  const hookL_free = Math.min(reqLdh, xB1_free - zLeft - recZ);
+  const hookL_ret = Math.min(reqLdh, zRight - xB1_ret - recZ);
+
+  const spliceSvg = `
+<svg viewBox="0 0 ${spW} ${spH}" xmlns="http://www.w3.org/2000/svg" style="background:#f9fafc; border:2px solid #e1e4e8; border-radius:8px;">
+<defs>
+  <pattern id="concZ" patternUnits="userSpaceOnUse" width="40" height="40">
+    <rect width="40" height="40" fill="#e8ecef" />
+    <circle cx="10" cy="10" r="1.5" fill="#bbb" />
+    <circle cx="30" cy="25" r="2" fill="#ccc" />
+    <path d="M 5 30 L 10 35 L 15 30 Z" fill="#cfd6db" />
+  </pattern>
+  <pattern id="concW" patternUnits="userSpaceOnUse" width="40" height="40">
+    <rect width="40" height="40" fill="#f0f3f5" />
+    <circle cx="20" cy="15" r="1.5" fill="#ccc" />
+    <path d="M 25 35 L 30 30 L 35 35 Z" fill="#d8dee3" />
+  </pattern>
+</defs>
+
+<!-- Dimensiones Muro y Zapata Base -->
+<rect x="${zLeft}" y="${cY}" width="${zWidth}" height="${zHeight}" fill="url(#concZ)" stroke="#333" stroke-width="2.5"/>
+<rect x="${wLeft}" y="60" width="${wThick}" height="${cY - 60}" fill="url(#concW)" stroke="#333" stroke-width="2.5"/>
+
+<!-- Corte Rugoso (Junta de Construcción) -->
+<path d="M ${wLeft-15} ${cY} Q ${wLeft+10} ${cY+12} ${wLeft+30} ${cY} T ${wLeft+70} ${cY} T ${wRight+15} ${cY}" fill="none" stroke="#222" stroke-width="3" stroke-dasharray="10,5"/>
+
+<!-- Nivel Sello Fundación -->
+<text x="${zRight + 20}" y="${cY + zHeight - 10}" text-anchor="start" fill="#555" font-size="16" font-weight="bold" font-family="Inter,Arial,sans-serif">▼ SELLO DE FUNDACIÓN</text>
+<line x1="${zRight}" y1="${cY + zHeight}" x2="${zRight + 150}" y2="${cY + zHeight}" stroke="#555" stroke-width="2" stroke-dasharray="8,4"/>
+
+<!-- ARMADURA LONGITUDINAL ZAPATA (Repartición) PUNTOS -->
+${Array.from({length: 6}).map((_, i) => {
+  const xLeftP = zLeft + recZ + 15;
+  const xRightP = zRight - recZ - 15;
+  const xPos = xLeftP + i * (xRightP - xLeftP) / 5;
+  return `
+    <circle cx="${xPos}" cy="${cY + zHeight - recZ - 10}" r="7" fill="#666" stroke="#fff" stroke-width="1.5" />
+    <circle cx="${xPos}" cy="${cY + recZ + 10}" r="7" fill="#666" stroke="#fff" stroke-width="1.5" />
+  `;
+}).join('')}
+
+<!-- ARMADURA TRANSVERSAL ZAPATA (B3 y B4) -->
+<!-- Inferior B3 -->
+<line x1="${zLeft + recZ}" y1="${cY + zHeight - recZ + 12}" x2="${zRight - recZ}" y2="${cY + zHeight - recZ + 12}" stroke="#dd4400" stroke-width="6" stroke-linecap="round"/>
+<line x1="${zLeft + recZ}" y1="${cY + zHeight - recZ + 12}" x2="${zLeft + recZ}" y2="${cY + zHeight - recZ - 18}" stroke="#dd4400" stroke-width="6" stroke-linecap="round"/>
+<line x1="${zRight - recZ}" y1="${cY + zHeight - recZ + 12}" x2="${zRight - recZ}" y2="${cY + zHeight - recZ - 18}" stroke="#dd4400" stroke-width="6" stroke-linecap="round"/>
+<!-- Superior B4 -->
+<line x1="${zLeft + recZ}" y1="${cY + recZ - 12}" x2="${zRight - recZ}" y2="${cY + recZ - 12}" stroke="#002288" stroke-width="6" stroke-linecap="round"/>
+<line x1="${zLeft + recZ}" y1="${cY + recZ - 12}" x2="${zLeft + recZ}" y2="${cY + recZ + 18}" stroke="#002288" stroke-width="6" stroke-linecap="round"/>
+<line x1="${zRight - recZ}" y1="${cY + recZ - 12}" x2="${zRight - recZ}" y2="${cY + recZ + 18}" stroke="#002288" stroke-width="6" stroke-linecap="round"/>
+
+<!-- Etiquetas B3 y B4 con Directrices -->
+<path d="M ${wLeft - 60} ${cY + recZ - 60} L ${wLeft - 30} ${cY + recZ - 60} L ${cX - 150} ${cY + recZ - 12}" fill="none" stroke="#002288" stroke-width="1.5"/>
+<text x="${wLeft - 65}" y="${cY + recZ - 55}" text-anchor="end" fill="#002288" font-size="18" font-weight="bold" font-family="Inter,Arial,sans-serif">B4 — Ø${B4.phi}@${B4.sp} cm (Arm. Superior)</text>
+
+<path d="M ${wLeft - 60} ${cY + zHeight - recZ - 60} L ${wLeft - 30} ${cY + zHeight - recZ - 60} L ${cX - 150} ${cY + zHeight - recZ + 12}" fill="none" stroke="#dd4400" stroke-width="1.5"/>
+<text x="${wLeft - 65}" y="${cY + zHeight - recZ - 55}" text-anchor="end" fill="#dd4400" font-size="18" font-weight="bold" font-family="Inter,Arial,sans-serif">B3 — Ø${B3.phi}@${B3.sp} cm (Arm. Inferior)</text>
+
+<!-- Junta de Construcción Directriz -->
+<path d="M ${wRight + 120} ${cY - 20} L ${wRight + 150} ${cY - 20}" fill="none" stroke="#222" stroke-width="1.5"/>
+<path d="M ${wRight + 120} ${cY - 20} L ${wRight + 20} ${cY}" fill="none" stroke="#222" stroke-width="1.5" stroke-dasharray="3,3"/>
+<text x="${wRight + 155}" y="${cY - 25}" fill="#222" font-size="16" font-weight="bold" font-family="Inter,Arial,sans-serif">JUNTA DE CONSTRUCCIÓN</text>
+<text x="${wRight + 155}" y="${cY - 5}" fill="#666" font-size="13" font-family="Inter,Arial,sans-serif">Superficie escarificada</text>
+
+<!-- ARMADURA VERTICAL MURO CONTINUA (Sin Empalme) -->
+<!-- Cara Libre - B1* (Azul) - Dobla hacia la puntera (Izquierda) -->
+<path d="M ${xB1_free} 60 L ${xB1_free} ${cY + zHeight - recZ} L ${xB1_free - hookL_free} ${cY + zHeight - recZ}" fill="none" stroke="#0033cc" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- Cara Retenida - B1 (Rojo) - Dobla hacia el talón (Derecha) -->
+<path d="M ${xB1_ret} 60 L ${xB1_ret} ${cY + zHeight - recZ} L ${xB1_ret + hookL_ret} ${cY + zHeight - recZ}" fill="none" stroke="#cc0000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- ETIQUETAS E INDICADORES MURO -->
+<text x="${wLeft - 30}" y="${cY - 150}" text-anchor="end" fill="#0033cc" font-size="20" font-weight="bold" font-family="Inter,Arial,sans-serif">B1* — Ø${B1.phi}@${B1.sp} cm (Cara Libre)</text>
+<text x="${wLeft - 30}" y="${cY - 125}" text-anchor="end" fill="#002299" font-size="16" font-family="Inter,Arial,sans-serif">Barra anclada hacia la puntera (gancho 90°)</text>
+<line x1="${wLeft - 20}" y1="${cY - 158}" x2="${xB1_free - 10}" y2="${cY - 158}" stroke="#0033cc" stroke-width="1.5" stroke-dasharray="4,4"/>
+
+<text x="${wRight + 30}" y="${cY - 150}" text-anchor="start" fill="#cc0000" font-size="20" font-weight="bold" font-family="Inter,Arial,sans-serif">B1 — Ø${B1.phi}@${B1.sp} cm (Cara Retenida)</text>
+<text x="${wRight + 30}" y="${cY - 125}" text-anchor="start" fill="#990000" font-size="16" font-family="Inter,Arial,sans-serif">Barra anclada hacia el talón (gancho 90°)</text>
+<line x1="${wRight + 20}" y1="${cY - 158}" x2="${xB1_ret + 10}" y2="${cY - 158}" stroke="#cc0000" stroke-width="1.5" stroke-dasharray="4,4"/>
+
+<!-- ARMADURA HORIZONTAL PANTALLA (B2) PUNTOS -->
+${Array.from({length: Math.floor((cY - 80) / (B2.sp * scZ))}).map((_, i) => {
+  const yPos = cY - 20 - (i * B2.sp * scZ);
+  return `<circle cx="${xB1_free + 12}" cy="${yPos}" r="7" fill="#ee5500" stroke="#fff" stroke-width="1.5" />
+          <circle cx="${xB1_ret - 12}" cy="${yPos}" r="7" fill="#ee5500" stroke="#fff" stroke-width="1.5" />`;
+}).join('')}
+<!-- Etiqueta B2 -->
+<path d="M ${xB1_ret - 12} ${cY - 20 - (B2.sp * scZ)} L ${wRight + 30} ${cY - 20 - (B2.sp * scZ)}" stroke="#ee5500" stroke-width="1.5" stroke-dasharray="3,3"/>
+<text x="${wRight + 35}" y="${cY - 20 - (B2.sp * scZ) + 5}" fill="#ee5500" font-size="18" font-weight="bold" font-family="Inter,Arial,sans-serif">B2 — Ø${B2.phi}@${B2.sp} cm (Repartición)</text>
+
+<!-- COTAS GEOMÉTRICAS Y RECUBRIMIENTOS -->
+<!-- Espesor Muro -->
+<line x1="${wLeft}" y1="40" x2="${wRight}" y2="40" stroke="#444" stroke-width="2"/>
+<line x1="${wLeft}" y1="35" x2="${wLeft}" y2="60" stroke="#444" stroke-width="2"/>
+<line x1="${wRight}" y1="35" x2="${wRight}" y2="60" stroke="#444" stroke-width="2"/>
+<text x="${cX}" y="32" text-anchor="middle" fill="#444" font-size="16" font-weight="bold" font-family="Inter,Arial,sans-serif">${Math.round(g.t_muro * 100)} cm</text>
+
+<!-- Altura Zapata -->
+<line x1="${zRight + 20}" y1="${cY}" x2="${zRight + 20}" y2="${cY + zHeight}" stroke="#444" stroke-width="2"/>
+<line x1="${zRight}" y1="${cY}" x2="${zRight + 30}" y2="${cY}" stroke="#444" stroke-width="2"/>
+<line x1="${zRight}" y1="${cY + zHeight}" x2="${zRight + 30}" y2="${cY + zHeight}" stroke="#444" stroke-width="2"/>
+<text x="${zRight + 30}" y="${cY + zHeight/2 + 5}" text-anchor="start" fill="#444" font-size="18" font-weight="bold" font-family="Inter,Arial,sans-serif">Hz = ${Math.round(g.Hf * 100)} cm</text>
+
+<!-- Recubrimiento Libre (Punta) -->
+<line x1="${wLeft}" y1="200" x2="${xB1_free}" y2="200" stroke="#111" stroke-width="1.5"/>
+<text x="${(wLeft+xB1_free)/2}" y="195" text-anchor="middle" fill="#111" font-size="13" font-family="Inter,Arial,sans-serif">3cm</text>
+<!-- Recubrimiento Retenida (Talón) -->
+<line x1="${wRight}" y1="200" x2="${xB1_ret}" y2="200" stroke="#111" stroke-width="1.5"/>
+<text x="${(wRight+xB1_ret)/2}" y="195" text-anchor="middle" fill="#111" font-size="13" font-family="Inter,Arial,sans-serif">4cm</text>
+<!-- Recubrimiento Zapata (Fondo) -->
+<line x1="${zLeft - 20}" y1="${cY + zHeight}" x2="${zLeft - 20}" y2="${cY + zHeight - recZ}" stroke="#111" stroke-width="1.5"/>
+<line x1="${zLeft}" y1="${cY + zHeight}" x2="${zLeft - 30}" y2="${cY + zHeight}" stroke="#111" stroke-width="1"/>
+<line x1="${zLeft}" y1="${cY + zHeight - recZ}" x2="${zLeft - 30}" y2="${cY + zHeight - recZ}" stroke="#111" stroke-width="1"/>
+<text x="${zLeft - 30}" y="${cY + zHeight - recZ/2 + 5}" text-anchor="end" fill="#111" font-size="16" font-weight="bold" font-family="Inter,Arial,sans-serif">r=5cm</text>
+
+<!-- Cotas Ganchos Ldh -->
+<!-- Cara Retenida -->
+<line x1="${xB1_ret}" y1="${cY + zHeight - recZ + 45}" x2="${xB1_ret + hookL_ret}" y2="${cY + zHeight - recZ + 45}" stroke="#cc0000" stroke-width="2"/>
+<line x1="${xB1_ret}" y1="${cY + zHeight - recZ + 35}" x2="${xB1_ret}" y2="${cY + zHeight - recZ + 55}" stroke="#cc0000" stroke-width="2"/>
+<line x1="${xB1_ret + hookL_ret}" y1="${cY + zHeight - recZ + 35}" x2="${xB1_ret + hookL_ret}" y2="${cY + zHeight - recZ + 55}" stroke="#cc0000" stroke-width="2"/>
+<text x="${xB1_ret + hookL_ret/2}" y="${cY + zHeight - recZ + 70}" text-anchor="middle" fill="#cc0000" font-size="15" font-weight="bold" font-family="Inter,Arial,sans-serif">Ldh ≈ ${Math.round(hookL_ret/scZ * 100)} cm</text>
+<!-- Cara Libre -->
+<line x1="${xB1_free}" y1="${cY + zHeight - recZ + 45}" x2="${xB1_free - hookL_free}" y2="${cY + zHeight - recZ + 45}" stroke="#0033cc" stroke-width="2"/>
+<line x1="${xB1_free}" y1="${cY + zHeight - recZ + 35}" x2="${xB1_free}" y2="${cY + zHeight - recZ + 55}" stroke="#0033cc" stroke-width="2"/>
+<line x1="${xB1_free - hookL_free}" y1="${cY + zHeight - recZ + 35}" x2="${xB1_free - hookL_free}" y2="${cY + zHeight - recZ + 55}" stroke="#0033cc" stroke-width="2"/>
+<text x="${xB1_free - hookL_free/2}" y="${cY + zHeight - recZ + 70}" text-anchor="middle" fill="#0033cc" font-size="15" font-weight="bold" font-family="Inter,Arial,sans-serif">Ldh ≈ ${Math.round(hookL_free/scZ * 100)} cm</text>
+
+</svg>`;
+
+  const spliceTableRows = `
+    <tr><td style="text-align:left"><b>Anclaje de Pata (Gancho 90°)</b></td><td>Cara Retenida y Libre</td><td style="color:#002a80"><b>Desarrollo Estándar</b></td><td style="text-align:left">Barra vertical continua, doblada paralela a la zapata.</td></tr>
+    <tr><td style="text-align:left"><b>Recubrimiento Cara Retenida</b></td><td>Terreno</td><td style="color:#002a80"><b>4.0 cm</b></td><td style="text-align:left">Contacto con humedad y rellenos</td></tr>
+    <tr><td style="text-align:left"><b>Recubrimiento Cara Libre</b></td><td>Aire/Moldaje</td><td style="color:#002a80"><b>3.0 cm</b></td><td style="text-align:left">Expuesto a ambiente normal</td></tr>
+    <tr><td style="text-align:left"><b>Recubrimiento Zapata (Fondo)</b></td><td>Empréstito</td><td style="color:#002a80"><b>5.0 cm</b></td><td style="text-align:left">Asumiendo sello de fundación (H5)</td></tr>
+  `;
+
+  // ── Tables ────────────────────────────────────────────────
+  const now = new Date().toLocaleDateString('es-CL');
+
+  const rebarRows = [
+    ['B1',  'Pantalla — Vertical principal (cara retenida)', B1.phi, B1.sp, f2(res.As_req), f2(B1.prov)],
+    ['B1*', 'Pantalla — Vertical cara libre (minimo NCh430)', B1.phi, B1.sp, f2(res.As_req), f2(B1.prov)],
+    ['B2',  'Pantalla — Horizontal reparticion/retraccion', B2.phi, B2.sp, f2(B2.req), f2(B2.prov)],
+    ['B3',  'Zapata Punta — Principal transversal (inf)', B3.phi, B3.sp, f2(res.As_toe), f2(B3.prov)],
+    ['B4',  'Zapata Talon — Principal transversal (sup)', B4.phi, B4.sp, f2(res.As_heel), f2(B4.prov)],
+    ['B5',  'Zapata — Longitudinal de reparticion (min)', B2.phi, B2.sp, '-', f2(B2.prov)],
+  ].map(([id,desc,phi,sp,req,prov]) =>
+    `<tr><td><b>${id}</b></td><td style="text-align:left">${desc}</td><td>Ø${phi}</td><td>@${sp}</td><td>${req}</td><td>${prov} ✓</td></tr>`
+  ).join('');
+
+  const qMax = Math.max(res.q_punta, res.q_talon);
+  const safeDiv = (a,b) => b>0 ? f2(a/b) : '∞';
+  const chks = [
+    ['Volcamiento',    'FS = '+f2(res.FS_volcamiento),   '≥ 1.50', res.FS_volcamiento >= 1.5],
+    ['Deslizamiento',  'FS = '+f2(res.FS_deslizamiento), '≥ 1.50', res.FS_deslizamiento >= 1.5],
+    ['Cap. portante',  'q_max = '+f1(qMax)+' kPa',       '≤ '+s.qAdm+' kPa', qMax <= s.qAdm],
+    ['Corte pantalla', 'phiVc/Vu = '+safeDiv(res.φVc_stem, res.Vu_stem), '≥ 1.0', res.shear_ok_stem],
+    ['Corte punta',    'phiVc/Vu = '+safeDiv(res.φVc_zap,  res.Vu_toe),  '≥ 1.0', res.shear_ok_toe],
+    ['Corte talon',    'phiVc/Vu = '+safeDiv(res.φVc_zap,  res.Vu_heel), '≥ 1.0', res.shear_ok_heel],
+  ].map(([lbl,val,lim,ok]) =>
+    `<tr><td>${lbl}</td><td>${val}</td><td>${lim}</td><td style="color:${ok?'#006600':'#cc0000'};font-weight:bold">${ok?'CUMPLE ✓':'FALLA ✗'}</td></tr>`
+  ).join('');
+
+  const vol_conc = (g.B_zap * g.Hf + g.t_muro * res.H_stem) * g.L;
+  const kg_acero = vol_conc * 85; // Estimación ~85kg/m3 para cuantía típica de muro cantiléver
+
+  const geoRows = [
+    ['H libre',    f2(g.H_libre)+' m',              "Tipo Hormigón", "H25 (f'c="+m.fc+" MPa)"],
+    ['H empotram.',f2(g.H_emp)+' m',                "Tipo Acero",    "A630-420H (fy="+m.fy+")"],
+    ['e pantalla', (g.t_muro*100).toFixed(0)+' cm', "Cubicación H.", f2(vol_conc)+' m³ total'],
+    ['B zapata',   f2(g.B_zap)+' m',                "Cubicación Ac.", "~"+Math.round(kg_acero)+' kg total'],
+    ['Hf zapata',  (g.Hf*100).toFixed(0)+' cm',     'Suelo (φ)',     s.phi+'°'],
+    ['L muro',     f2(g.L)+' m',                    'Suelo (γ)',     s.gamma+' kN/m³'],
+    ['Sobrecarga', RW.loads.qSobrecarga+' kPa',     'Suelo (q_adm)', s.qAdm+' kPa'],
+  ].map(([k1,v1,k2,v2]) =>
+    `<tr><td style="text-align:left">${k1}</td><td><b>${v1}</b></td><td style="text-align:left">${k2}</td><td><b>${v2}</b></td></tr>`
+  ).join('');
+
+  // ── CUBICACIÓN EXACTA DE ACERO Y HORMIGÓN ───────────────────
+  const f0 = (val) => Math.round(val);
+  const unit_w = (phi) => 0.006165 * phi * phi; // peso lineal kg/m
+  const L_vara = 12; // Largo comercial de vara en Chile
+  
+  const l_b1 = res.H_stem + g.Hf + 0.4;
+  const n_b1 = Math.ceil((g.L * 100) / B1.sp) + 1;
+  const m_b1 = n_b1 * l_b1;
+  
+  const n_b1s = Math.ceil((g.L * 100) / B1.sp) + 1; // asumiendo mismo espaciamiento base
+  const m_b1s = n_b1s * l_b1;
+  
+  const n_b2_caras = 2 * (Math.ceil((res.H_stem * 100) / B2.sp) + 1);
+  const m_b2 = n_b2_caras * g.L;
+  
+  const l_b34 = g.B_zap - 0.1 + 0.3; // Ancho zapata menos recubrimiento + ganchos
+  const n_b3 = Math.ceil((g.L * 100) / B3.sp) + 1;
+  const n_b4 = Math.ceil((g.L * 100) / B4.sp) + 1;
+  const m_b34 = (n_b3 + n_b4) * l_b34;
+  
+  const n_bz_long = Math.ceil((g.B_zap * 100) / B2.sp) + 1;
+  const m_bz_long = n_bz_long * g.L;
+
+  // Agrupar por diámetros
+  const dias = {};
+  const addD = (phi, len) => { if (!dias[phi]) dias[phi] = 0; dias[phi] += len; };
+  
+  addD(B1.phi, m_b1 * 1.10);  // +10% por empalmes
+  addD(B1.phi, m_b1s * 1.10);
+  addD(B2.phi, m_b2 * 1.05);  // +5% traslapes
+  addD(B3.phi, n_b3 * l_b34); // sin traslapes largos transversales, solo ganchos (ya incluidos)
+  addD(B4.phi, n_b4 * l_b34);
+  addD(B2.phi, m_bz_long * 1.05);
+
+  let total_kg_exacto = 0;
+  const aceroRows = Object.keys(dias).sort((a,b)=>a-b).map(phi => {
+    const L_req = dias[phi]; // Longitud teórica + empalmes
+    const L_buy = L_req * 1.05; // +5% despunte al cortar a medida
+    const varas = Math.ceil(L_buy / L_vara);
+    const kg = varas * L_vara * unit_w(phi);
+    total_kg_exacto += kg;
+    const despunte = ((varas * L_vara) - L_req) / L_req * 100;
+    
+    return `<tr><td><b>Ø${phi} mm</b></td><td>${f0(L_req)} m</td><td>${L_vara} m</td><td><b>${varas}</b></td><td style="color:#880000">${f1(despunte)}%</td><td><b>${f0(kg)} kg</b></td></tr>`;
+  }).join('');
+
+  const hormigonRows = `
+    <tr><td style="text-align:left">Pantalla del Muro</td><td>G25 (f'c = ${m.fc} MPa)</td><td>${f2(g.t_muro * res.H_stem * g.L)} m³</td></tr>
+    <tr><td style="text-align:left">Zapata de Fundación</td><td>G25 (f'c = ${m.fc} MPa)</td><td>${f2(g.B_zap * g.Hf * g.L)} m³</td></tr>
+    <tr><td style="text-align:left; background:#eee"><b>Subtotal Teórico</b></td><td style="background:#eee"></td><td style="background:#eee"><b>${f2(vol_conc)} m³</b></td></tr>
+    <tr style="background:#fffcf0"><td style="text-align:left; font-size:20px; padding:10px 8px"><b>Total a Comprar (+5% pérdida)</b></td><td style="font-size:20px; padding:10px 8px"><b>G25</b></td><td style="font-size:22px; color:#aa4400; padding:10px 8px"><b>${f2(vol_conc * 1.05)} m³</b></td></tr>
+  `;
+
+
+
+  // ── Full HTML document ─────────────────────────────────────
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Muro de Contencion — Planos NCh430</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Inter,Arial,Helvetica,sans-serif;font-size:22px;color:#111;background:#fff;}
+.page{width:100%;padding:10mm 15mm;page-break-after:always;min-height:270mm;}
+.page:last-child{page-break-after:avoid;}
+.ph{display:flex;justify-content:space-between;align-items:flex-end;
+    border-bottom:2px solid #002a80;padding-bottom:10px;margin-bottom:15px;}
+.ph h1{font-size:28px;color:#002a80;}
+.ph .meta{font-size:16px;color:#555;text-align:right;line-height:1.55;}
+.stamp{border:2px solid #002a80;padding:10px 16px;font-size:16px;line-height:1.6;}
+.stamp b{font-size:20px;color:#002a80;}
+.sc{text-align:center;margin:8px 0 14px;}
+.sc svg{width:100%;max-height:225mm;height:auto;}
+.tr{width:100%;border-collapse:collapse;margin-top:10px;font-size:18px;}
+.tr th,.tr td{border:1px solid #aaa;padding:6px 12px;text-align:center;}
+.tr th{background:#dce6f2;font-weight:bold;}
+.tr .sh th{background:#c8d8ee;font-size:16px;}
+.cols{display:flex;gap:16px;margin-top:10px;}
+.cols>*{flex:1;}
+.notes{margin-top:14px;font-size:16px;color:#444;border-top:1px solid #ccc;padding-top:8px;line-height:1.6;}
+.print-btn{position:fixed;top:20px;right:20px;background:#003080;color:white;padding:14px 28px;border:none;border-radius:6px;font-family:Arial,sans-serif;font-size:18px;font-weight:bold;cursor:pointer;box-shadow:0 4px 6px rgba(0,0,0,0.3);z-index:1000;}
+.print-btn:hover{background:#0044aa;}
+@media print{
+  @page{size:A3 landscape;margin:10mm;}
+  body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}
+  .no-print{display:none !important;}
+}
+</style>
+</head>
+<body>
+<button class="no-print print-btn" onclick="window.print()">🖨️ Descargar / Guardar PDF</button>
+
+<!-- ═══════════════ PAG 1: PERFIL TRANSVERSAL ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <div>
+      <h1>MURO DE CONTENCION — PERFIL TRANSVERSAL</h1>
+      <div style="font-size:16px;color:#555">Escala referencial · NCh3171-2010 + NCh430 Of.2008</div>
+    </div>
+    <div class="stamp"><b>EstructuraCalc v2.1</b><br>Ing. Calculista: Raúl Zapata Novoa<br>Fecha: ${now}<br>H = ${f2(g.H_libre)} m · L = ${f2(g.L)} m<br>f'c = ${m.fc} MPa · fy = ${m.fy} MPa</div>
+  </div>
+  <div class="sc">${csSvg}</div>
+  <div class="cols">
+    <table class="tr">
+      <thead>
+        <tr><th colspan="6" style="background:#003080;color:#fff">CUADRO DE ARMADURA</th></tr>
+        <tr class="sh"><th>Barra</th><th>Descripcion</th><th>Ø mm</th><th>Esp.</th><th>As_req cm²/m</th><th>As_prov cm²/m</th></tr>
+      </thead>
+      <tbody>${rebarRows}</tbody>
+    </table>
+    <table class="tr">
+      <thead>
+        <tr><th colspan="4" style="background:#2a4060;color:#fff">DATOS DE DISEÑO</th></tr>
+        <tr class="sh"><th>Geometria</th><th>Valor</th><th>Material/Suelo</th><th>Valor</th></tr>
+      </thead>
+      <tbody>${geoRows}</tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════ PAG 2: PERFIL LONGITUDINAL ═════════════ -->
+<div class="page">
+  <div class="ph">
+    <div>
+      <h1>MURO DE CONTENCION — PERFIL LONGITUDINAL</h1>
+      <div style="font-size:16px;color:#555">Vista cara libre · Barbacanas Ø75@150cm · Junta fria J.F.</div>
+    </div>
+    <div class="stamp"><b>EstructuraCalc v2.1</b><br>Ing. Calculista: Raúl Zapata Novoa<br>Fecha: ${now}<br>H = ${f2(g.H_libre)} m · L = ${f2(g.L)} m</div>
+  </div>
+  <div class="sc">${longSvg}</div>
+  <table class="tr" style="margin-top:5px">
+    <thead>
+      <tr><th colspan="4" style="background:#003080;color:#fff">VERIFICACIONES DE DISEÑO (NCh3171)</th></tr>
+      <tr class="sh"><th>Verificacion</th><th>Resultado</th><th>Limite normativo</th><th>Estado</th></tr>
+    </thead>
+    <tbody>${chks}</tbody>
+  </table>
+  <div class="notes">
+    <b>Notas constructivas:</b> (1) Hormigon H25 (f'c=25MPa) segun NCh170. (2) Acero A630-420H (fy=420MPa) NCh430.
+    (3) Relleno: Grava GP/GW compactada ≥95% Proctor Modificado (NCh1508). (4) Pp=0 en FS_des (NCh 02 §3.2, practica conservadora Chile).
+    (5) Junta fria J.F. con chavetero de corte 5×10cm; limpiar superficie antes del segundo vaciado.
+    (6) Impermeabilizar trasdos con 2 manos de pintura asfaltica elastomerica.
+    (7) Sistema drenaje: geotextil + grava limpia 30cm + tubo Ø110mm PVC perforado + barbacanas Ø75mm@150cm.
+    (8) Compactacion: prohibido rodillo pesado a menos de H/2 del muro; usar plancha vibratoria en capas ≤10cm.
+    (9) LRFD NCh430: U = 1.2D + 1.6H; φ_flex=0.90; φ_corte=0.75.
+  </div>
+</div>
+
+<!-- ═══════════════ PAG 3: PLANTA DE ZAPATA ═════════════ -->
+<div class="page">
+  <div class="ph">
+    <div>
+      <h1>MURO DE CONTENCION — PLANTA DE ZAPATA</h1>
+      <div style="font-size:16px;color:#555">Vista en planta · Distribucion de enfierradura de la zapata</div>
+    </div>
+    <div class="stamp"><b>EstructuraCalc v2.1</b><br>Ing. Calculista: Raúl Zapata Novoa<br>Fecha: ${now}<br>B = ${f2(g.B_zap)} m · L = ${f2(g.L)} m</div>
+  </div>
+  <div class="sc">${planSvg}</div>
+</div>
+
+<!-- ═══════════════ PAG 4: DETALLE DE EMPALME ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <div>
+      <h1>DETALLE DE EMPALME MURO-ZAPATA</h1>
+      <div style="font-size:16px;color:#555">Sección ampliada · Junta de construcción y traslapes de armadura vertical</div>
+    </div>
+    <div class="stamp"><b>EstructuraCalc v2.1</b><br>Ing. Calculista: Raúl Zapata Novoa<br>Fecha: ${now}</div>
+  </div>
+  <div class="sc" style="margin-top:20px;">${spliceSvg}</div>
+  
+  <table class="tr" style="font-size:18px; margin-top:30px;">
+    <thead>
+      <tr>
+        <th style="text-align:left">Parámetro Constructivo</th>
+        <th>Referencia / Entorno</th>
+        <th>Valor de Diseño</th>
+        <th style="text-align:left">Observación Normativa</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${spliceTableRows}
+    </tbody>
+  </table>
+</div>
+
+
+
+<!-- ═══════════════ PAG 5: CUBICACIÓN DE MATERIALES ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <div>
+      <h1>CUBICACIÓN DE MATERIALES</h1>
+      <div style="font-size:18px;color:#555">Cantidades estimadas de Acero A630-420H y Hormigón G25</div>
+    </div>
+    <div class="stamp"><b>EstructuraCalc v2.1</b><br>Ing. Calculista: Raúl Zapata Novoa<br>Fecha: ${now}</div>
+  </div>
+
+  <h3 style="color:#002a80; margin: 30px 0 10px; font-size:24px; border-bottom:2px solid #002a80; padding-bottom:5px;">HORMIGÓN ESTRUCTURAL</h3>
+  <table class="tr" style="font-size:20px; margin-bottom: 30px;">
+    <thead>
+      <tr>
+        <th style="text-align:left">Elemento</th>
+        <th>Grado Normativo</th>
+        <th>Volumen Teórico</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${hormigonRows}
+    </tbody>
+  </table>
+
+  <h3 style="color:#002a80; margin: 40px 0 10px; font-size:24px; border-bottom:2px solid #002a80; padding-bottom:5px;">ACERO DE REFUERZO (A630-420H)</h3>
+  <table class="tr" style="font-size:20px;">
+    <thead>
+      <tr>
+        <th>Diámetro</th>
+        <th>Longitud Teórica (incl. empalmes)</th>
+        <th>Formato Comercial</th>
+        <th>Varas a Comprar</th>
+        <th>Pérdida/Despunte</th>
+        <th>Peso Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${aceroRows}
+      <tr style="background:#fffcf0">
+        <td colspan="5" style="text-align:right; font-size:20px; padding:10px 8px"><b>TOTAL ACERO ESTIMADO:</b></td>
+        <td style="font-size:22px; color:#aa4400; padding:10px 8px"><b>${f0(total_kg_exacto)} kg</b></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="notes" style="margin-top:40px; font-size:18px;">
+    <b>NOTA TÉCNICA:</b> Esta cubicación es una estimación analítica generada a partir de las cuantías de diseño y la geometría base del muro (L = ${f2(g.L)} m). Las varillas de acero asumen el formato comercial estándar en Chile (L = 12 m). Los porcentajes de "Pérdida/Despunte" representan el retazo inutilizable de acero que se obtiene tras cortar las varillas a las medidas de catálogo. El volumen de hormigón incluye un 5% de pérdida típica de faena. Todo contratista debe validar la cubicación en terreno antes de la adquisición final de materiales.
+  </div>
+</div>
+
+<!-- ═══════════════ PAG 6: ESPECIFICACIONES CONSTRUCTIVAS (Parte 1) ═════════════ -->
+<div class="page">
+  <div class="ph">
+    <div>
+      <h1>ESPECIFICACIONES TÉCNICAS Y CONSTRUCTIVAS (1/2)</h1>
+      <div style="font-size:16px;color:#555">Recomendaciones estándar para ejecución de muros de contención (NCh170, NCh430)</div>
+    </div>
+    <div class="stamp"><b>EstructuraCalc v2.1</b><br>Ing. Calculista: Raúl Zapata Novoa<br>Fecha: ${now}</div>
+  </div>
+  <div style="margin-top:20px; font-size:20px; line-height:1.7; color:#222; text-align:justify;">
+    
+    <div style="margin-bottom: 35px;">
+      <h3 style="color:#002a80; margin-bottom:12px; font-size:24px; border-bottom:1px solid #ccc;">1. EMPALMES Y TRASLAPOS DE ARMADURA</h3>
+      <ul style="margin-left:25px; margin-bottom:10px;">
+        <li><b>Armadura Horizontal:</b> Si la longitud del muro (L) excede el largo comercial de las barras (usualmente 6m o 12m), los traslapos deben ser como mínimo de <strong>40 a 50 veces el diámetro</strong> de la barra (40db). Deben disponerse alternados (al tresbolillo) para no concentrar planos de debilidad.</li>
+        <li><b>Armadura Vertical (Junta Fría):</b> En la unión zapata-muro, se deben dejar "chicotes" (starter bars) anclados a la zapata. La armadura vertical de la pantalla (B1 y B1*) se empalmará por traslapo a estos chicotes por sobre la junta de construcción, respetando la longitud mínima de traslapo.</li>
+      </ul>
+    </div>
+
+    <div style="margin-bottom: 35px;">
+      <h3 style="color:#002a80; margin-bottom:12px; font-size:24px; border-bottom:1px solid #ccc;">2. RECUBRIMIENTOS Y SEPARADORES</h3>
+      <ul style="margin-left:25px; margin-bottom:10px;">
+        <li><b>Zapata:</b> Mínimo <strong>5 cm</strong> (50 mm) cuando se hormigona contra radier pobre (empréstito), o <strong>7.5 cm</strong> si se hormigona directamente contra el terreno.</li>
+        <li><b>Pantalla:</b> Mínimo <strong>4 cm</strong> (40 mm) en la cara en contacto con el suelo (trasdós) y <strong>2.5 a 3 cm</strong> en la cara libre.</li>
+        <li><b>Separadores:</b> Utilizar separadores plásticos certificados o calugas de mortero. Queda estrictamente prohibido el uso de piedras, despuntes de madera, o acero de despunte para dar el recubrimiento.</li>
+      </ul>
+    </div>
+
+    <div style="margin-bottom: 35px;">
+      <h3 style="color:#002a80; margin-bottom:12px; font-size:24px; border-bottom:1px solid #ccc;">3. ALAMBRADO DE LA ENFIERRADURA</h3>
+      <ul style="margin-left:25px; margin-bottom:10px;">
+        <li>Amarrar las intersecciones con alambre negro cocido N°18 de forma firme y estable.</li>
+        <li>Es crítico que las puntas del alambre cortado queden <strong>dobladas hacia el interior del elemento</strong>. Si apuntan hacia el moldaje, invadirán el recubrimiento, se oxidarán al desencofrar y generarán manchas u oxidación progresiva en la cara expuesta.</li>
+      </ul>
+    </div>
+
+    <div style="margin-bottom: 35px;">
+      <h3 style="color:#002a80; margin-bottom:12px; font-size:24px; border-bottom:1px solid #ccc;">4. EMPRÉSTITO O RADIER POBRE</h3>
+      <ul style="margin-left:25px; margin-bottom:10px;">
+        <li>Previo al armado de la zapata, sellar el fondo de la excavación con una capa de hormigón pobre (ej. H5) de <strong>5 a 10 cm de espesor</strong>.</li>
+        <li>Este sello de fundación evita la contaminación del hormigón estructural con arcilla o tierra durante el vaciado, otorga una superficie nivelada, y permite realizar el trazado de ejes y la instalación limpia de las mallas y chicotes.</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ PAG 7: ESPECIFICACIONES CONSTRUCTIVAS (Parte 2) ═════════════ -->
+<div class="page">
+  <div class="ph">
+    <div>
+      <h1>ESPECIFICACIONES TÉCNICAS Y CONSTRUCTIVAS (2/2)</h1>
+      <div style="font-size:16px;color:#555">Recomendaciones estándar para ejecución de muros de contención (NCh170, NCh430)</div>
+    </div>
+    <div class="stamp"><b>EstructuraCalc v2.1</b><br>Ing. Calculista: Raúl Zapata Novoa<br>Fecha: ${now}</div>
+  </div>
+  <div style="margin-top:20px; font-size:20px; line-height:1.7; color:#222; text-align:justify;">
+    
+    <div style="margin-bottom: 35px;">
+      <h3 style="color:#002a80; margin-bottom:12px; font-size:24px; border-bottom:1px solid #ccc;">5. MOLDAJE Y DESCIMBRE</h3>
+      <ul style="margin-left:25px; margin-bottom:10px;">
+        <li>Los tableros de moldaje deben estar fuertemente arriostrados y sellados, garantizando la indeformabilidad ante la presión hidrostática del hormigón fresco.</li>
+        <li>Aplicar agente desmoldante <strong>antes</strong> de colocar e instalar la enfierradura para evitar contaminar el acero.</li>
+        <li>Descimbre lateral (caras verticales de la pantalla): Mínimo <strong>24 a 48 horas</strong>, evitando impactos severos que puedan despostillar el hormigón a edades tempranas.</li>
+      </ul>
+    </div>
+
+    <div style="margin-bottom: 35px;">
+      <h3 style="color:#002a80; margin-bottom:12px; font-size:24px; border-bottom:1px solid #ccc;">6. JUNTAS FRÍAS Y DE DILATACIÓN</h3>
+      <ul style="margin-left:25px; margin-bottom:10px;">
+        <li><b>Junta de Construcción (Zapata-Muro):</b> Antes del hormigonado de la pantalla, es imperativo <strong>picar, escarificar o hidro-lavar a presión</strong> la superficie de la zapata en la zona de contacto, removiendo lechada superficial, polvo y partes sueltas para exponer el árido grueso.</li>
+        <li>Para muros de gran envergadura (L > 10m), considerar cortes de control o juntas de dilatación para mitigar la fisuración por retracción del hormigón y cambios térmicos.</li>
+      </ul>
+    </div>
+
+    <div style="margin-bottom: 35px;">
+      <h3 style="color:#002a80; margin-bottom:12px; font-size:24px; border-bottom:1px solid #ccc;">7. COLOCACIÓN Y CURADO</h3>
+      <ul style="margin-left:25px; margin-bottom:10px;">
+        <li>Vaciar el hormigón en capas regulares no mayores a 50 cm. Usar mangas o trompas en caídas libres superiores a 1.5m para prevenir la disgregación de los áridos.</li>
+        <li>Vibrar mecánicamente penetrando unos 10 cm en la capa inferior previamente vaciada para evitar juntas frías accidentales.</li>
+        <li><strong>Curado:</strong> Mantener húmedo el hormigón por métodos tradicionales o mediante compuestos formadores de membrana (curado químico) por un mínimo de 7 días.</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>`;
+
+  const win = window.open('', '_blank', 'width=1200,height=900,scrollbars=yes');
+  if (!win) { alert('Habilitar ventanas emergentes en el navegador para generar PDF.'); return; }
+  win.document.write(html);
+  win.document.close();
+}
+
+// ══════════════════════════════════════════════════════════════
+// SVG RENDERER
+// ══════════════════════════════════════════════════════════════
+function drawWallSVG(rw, res) {
+  const g  = rw.geometry;
+  const s  = rw.soil;
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.getElementById('wall-svg');
+
+  // ── Scene layout constants ────────────────────────────────
+  const SW = SCENE_W, SH = SCENE_H;
+
+  // Space allocations inside scene
+  const PAD_L  = 50;    // left edge margin
+  const PAD_R  = 55;    // right edge margin
+  const PAD_T  = 52;    // top (title row)
+  const PAD_B  = 130;   // bottom (bearing diagram + horizontal dims)
+
+  // Physics widths shown each side
+  const SHOW_FREE_L = 0.32;                               // m natural terrain left
+  const SHOW_SOIL_R = Math.max(0.80, res.B_talon + 0.55); // m gravel fill right
+
+  const physW = SHOW_FREE_L + g.B_zap + SHOW_SOIL_R;
+  const physH = res.H + g.Hf;   // H_libre + H_emp + Hf
+
+  // Scale px/m to fit scene
+  // Reserve 190px left for pressure diagram labels, 90px right for dim lines
+  const PRESS_ZONE = 165;  // px reserved left-of-wall for active pressure diagram
+  const DIM_ZONE_R =  82;  // px reserved right-of-soil for vertical dim lines
+  const drawW = SW - PAD_L - PAD_R - PRESS_ZONE - DIM_ZONE_R;
+  const drawH = SH - PAD_T - PAD_B;
+  const sc = Math.min(drawW / physW, drawH / physH);
+
+  // Origin of the wall drawing (toe of footing)
+  const x0 = PAD_L + PRESS_ZONE + SHOW_FREE_L * sc;   // x pixel of toe
+  const y0 = PAD_T;                                     // y pixel of retained surface
+
+  // Key X pixels
+  const x_toe  = x0;
+  const x_sl   = x_toe  + g.B_toe  * sc;      // free-side face of stem
+  const x_sr   = x_sl   + g.t_muro * sc;      // retained-side face of stem
+  const x_heel = x_toe  + g.B_zap  * sc;      // heel of footing
+  const x_soil = x_heel + SHOW_SOIL_R * sc;   // right edge of soil zone
+  const x_free = x_toe  - SHOW_FREE_L * sc;   // left edge of free terrain
+
+  // Key Y pixels
+  const y_surf = y0;                                  // retained fill surface
+  const y_ntn  = y_surf + g.H_libre * sc;             // N.T.N. free side
+  const y_ft   = y_ntn  + g.H_emp   * sc;             // top of footing
+  const y_fb   = y_ft   + g.Hf      * sc;             // base of footing (sello)
+  const y_base_label = y_fb + 18;                     // y where foundation label goes
+
+  // ── Build SVG ────────────────────────────────────────────
+  svg.innerHTML = '';
+  svg.setAttribute('xmlns', ns);
+
+  // Helper creators (append to group g_scene by default)
+  let g_scene;  // declared below after defs
+
+  const mkEl = (tag, at, parent) => {
+    const e = document.createElementNS(ns, tag);
+    if (at) Object.entries(at).forEach(([k,v]) => e.setAttribute(k, v));
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const tx = (txt, x, y, at, parent) => {
+    const t = document.createElementNS(ns, 'text');
+    t.textContent = txt;
+    t.setAttribute('x', x); t.setAttribute('y', y);
+    Object.entries({ 'font-size':'11.5', 'font-family':'Inter,Arial,Helvetica,sans-serif', fill:'#8b949e', ...at })
+      .forEach(([k,v]) => t.setAttribute(k, v));
+    (parent || g_scene).appendChild(t);
+    return t;
+  };
+
+  // ── DEFS ─────────────────────────────────────────────────
+  const defs = mkEl('defs', {}, svg);
+
+  // Concrete: 45° diagonals
+  const pConc = mkEl('pattern', { id:'rwp-conc', x:0, y:0, width:8, height:8,
+    patternUnits:'userSpaceOnUse', patternTransform:'rotate(45 0 0)' }, defs);
+  mkEl('line', { x1:0, y1:0, x2:0, y2:8, stroke:'#aaa', 'stroke-width':0.7, opacity:'0.3' }, pConc);
+
+  // Gravel fill (retained): crosshatch #8B6914 — grava drenante
+  const pGrav = mkEl('pattern', { id:'rwp-grav', x:0, y:0, width:14, height:14,
+    patternUnits:'userSpaceOnUse' }, defs);
+  mkEl('line', { x1:0, y1:14, x2:14, y2:0,  stroke:'#8B6914', 'stroke-width':0.85, opacity:'0.55' }, pGrav);
+  mkEl('line', { x1:0, y1:0,  x2:14, y2:14, stroke:'#8B6914', 'stroke-width':0.85, opacity:'0.55' }, pGrav);
+
+  // Stabilized base (foundation): horizontal lines — base estabilizada
+  const pBase = mkEl('pattern', { id:'rwp-base', x:0, y:0, width:12, height:8,
+    patternUnits:'userSpaceOnUse' }, defs);
+  mkEl('line', { x1:0, y1:4, x2:12, y2:4, stroke:'#c8982a', 'stroke-width':1.1, opacity:'0.45' }, pBase);
+  mkEl('line', { x1:0, y1:8, x2:12, y2:8, stroke:'#c8982a', 'stroke-width':0.5, opacity:'0.25' }, pBase);
+
+  // Natural terrain (free side): lighter crosshatch green-brown
+  const pNat = mkEl('pattern', { id:'rwp-nat', x:0, y:0, width:14, height:14,
+    patternUnits:'userSpaceOnUse' }, defs);
+  mkEl('line', { x1:0, y1:14, x2:14, y2:0,  stroke:'#5a7a42', 'stroke-width':0.75, opacity:'0.5' }, pNat);
+  mkEl('line', { x1:0, y1:0,  x2:14, y2:14, stroke:'#5a7a42', 'stroke-width':0.75, opacity:'0.5' }, pNat);
+
+  // Arrowhead markers
+  const mkArrow = (id, color) => {
+    const m = mkEl('marker', { id, markerWidth:8, markerHeight:6,
+      refX:7, refY:3, orient:'auto' }, defs);
+    mkEl('polygon', { points:'0 0, 8 3, 0 6', fill:color, opacity:'0.9' }, m);
+  };
+  mkArrow('rw-arr-pa',  '#f8a030');  // active pressure / Pa
+  mkArrow('rw-arr-pp',  '#3fb950');  // passive / Pp
+  mkArrow('rw-arr-q',   '#58a6ff');  // bearing pressure
+  mkArrow('rw-arr-n',   '#9a80f0');  // resultante N
+  mkArrow('rw-arr-dim', 'rgba(110,118,129,0.7)');
+
+  // ── Scene group (pan/zoom target) ───────────────────────
+  g_scene = mkEl('g', { id:'scene-g' }, svg);
+
+  // ── BACKGROUND ──────────────────────────────────────────
+  mkEl('rect', { x:0, y:0, width:SW, height:SH, fill:'#0d1117' }, g_scene);
+
+  // ── ZONE: TERRENO NATURAL (free side, izquierda) ────────
+  // Below N.T.N. on the free side
+  const freeW = x_sl - x_free;
+  mkEl('rect', { x:x_free, y:y_ntn, width:freeW, height:y_fb - y_ntn,
+    fill:'rgba(90,122,66,0.08)' }, g_scene);
+  mkEl('rect', { x:x_free, y:y_ntn, width:freeW, height:y_fb - y_ntn,
+    fill:'url(#rwp-nat)', opacity:'0.7' }, g_scene);
+
+  // ── ZONE: GRAVA DRENANTE (retained fill, derecha) ───────
+  const soilW = x_soil - x_sr;
+  // Full height retained fill (from surface to footing top)
+  mkEl('rect', { x:x_sr, y:y_surf, width:soilW, height:y_ft - y_surf,
+    fill:'rgba(120,80,30,0.12)' }, g_scene);
+  mkEl('rect', { x:x_sr, y:y_surf, width:soilW, height:y_ft - y_surf,
+    fill:'url(#rwp-grav)' }, g_scene);
+  // Fill above heel (between footing and retained surface level)
+  if (res.B_talon > 0) {
+    mkEl('rect', { x:x_sr, y:y_ft, width:x_heel - x_sr, height:y_fb - y_ft,
+      fill:'rgba(120,80,30,0.10)' }, g_scene);
+    mkEl('rect', { x:x_sr, y:y_ft, width:x_heel - x_sr, height:y_fb - y_ft,
+      fill:'url(#rwp-grav)', opacity:'0.6' }, g_scene);
+  }
+
+  // ── ZONE: BASE ESTABILIZADA (below footing) ─────────────
+  const baseH = 28;   // px depth shown for foundation soil
+  mkEl('rect', { x:x_free, y:y_fb, width:x_soil - x_free, height:baseH,
+    fill:'rgba(200,152,42,0.12)' }, g_scene);
+  mkEl('rect', { x:x_free, y:y_fb, width:x_soil - x_free, height:baseH,
+    fill:'url(#rwp-base)', opacity:'0.9' }, g_scene);
+
+  // ── PANTALLA (stem) ──────────────────────────────────────
+  mkEl('rect', { x:x_sl, y:y_surf, width:x_sr - x_sl, height:y_ft - y_surf,
+    fill:'rgba(200,200,200,0.10)', stroke:'#c9d1d9', 'stroke-width':1.6 }, g_scene);
+  mkEl('rect', { x:x_sl, y:y_surf, width:x_sr - x_sl, height:y_ft - y_surf,
+    fill:'url(#rwp-conc)', opacity:'0.55' }, g_scene);
+
+  // ── ZAPATA (footing) ─────────────────────────────────────
+  mkEl('rect', { x:x_toe, y:y_ft, width:x_heel - x_toe, height:y_fb - y_ft,
+    fill:'rgba(200,200,200,0.13)', stroke:'#c9d1d9', 'stroke-width':1.6 }, g_scene);
+  mkEl('rect', { x:x_toe, y:y_ft, width:x_heel - x_toe, height:y_fb - y_ft,
+    fill:'url(#rwp-conc)', opacity:'0.65' }, g_scene);
+
+  // ── GROUND LINES ─────────────────────────────────────────
+  // N.T.N. free side dashed line
+  mkEl('line', { x1:x_free, y1:y_ntn, x2:x_sl - 1, y2:y_ntn,
+    stroke:'#3fb950', 'stroke-width':1.6, 'stroke-dasharray':'7,4', opacity:'0.75' }, g_scene);
+  // Grass marks free side
+  for (let xi = x_free + 8; xi < x_sl - 6; xi += 13)
+    mkEl('line', { x1:xi, y1:y_ntn, x2:xi - 5, y2:y_ntn + 7,
+      stroke:'#3fb950', 'stroke-width':0.8, opacity:'0.4' }, g_scene);
+  // Retained surface line
+  mkEl('line', { x1:x_sr, y1:y_surf, x2:x_soil, y2:y_surf,
+    stroke:'#3fb950', 'stroke-width':1.6, opacity:'0.75' }, g_scene);
+  // Grass marks retained
+  for (let xi = x_sr + 10; xi < x_soil - 4; xi += 13)
+    mkEl('line', { x1:xi, y1:y_surf, x2:xi - 5, y2:y_surf + 7,
+      stroke:'#3fb950', 'stroke-width':0.8, opacity:'0.4' }, g_scene);
+  // Base footing line (sello)
+  mkEl('line', { x1:x_free, y1:y_fb, x2:x_soil, y2:y_fb,
+    stroke:'rgba(200,152,42,0.6)', 'stroke-width':1.2 }, g_scene);
+
+  // ══════════════════════════════════════════════════════════
+  // PRESSURE DIAGRAMS
+  // ══════════════════════════════════════════════════════════
+
+  // ── ACTIVE PRESSURE Pa (right side of stem, into retained soil) ──
+  // The polygon opens to the RIGHT from face x_sr
+  const pScale = Math.min(30, (x_soil - x_sr) * 0.62) / Math.max(1, res.σa_base);
+  const pa_top_px  = res.σa_sup  * pScale;  // px at surface (sobrecarga)
+  const pa_base_px = res.σa_base * pScale;  // px at base of stem
+
+  const paPts = [
+    `${x_sr},${y_surf}`,
+    `${x_sr + pa_top_px},${y_surf}`,
+    `${x_sr + pa_base_px},${y_ft}`,
+    `${x_sr},${y_ft}`,
+  ].join(' ');
+  mkEl('polygon', { points:paPts, fill:'rgba(248,160,48,0.22)', stroke:'#f8a030',
+    'stroke-width':1.3, 'stroke-linejoin':'round' }, g_scene);
+
+  // ── Etiqueta ① Empuje Activo ──────────────────────────────
+  {
+    const lx = x_sr + Math.max(pa_base_px, 4) + 6;
+    const ly = y_surf + 14;
+    const lbl = '① σa(z)  Empuje Activo';
+    const lw = lbl.length * 5.8 + 10;
+    mkEl('rect', { x:lx - 3, y:ly - 10, width:lw, height:13, rx:3,
+      fill:'rgba(13,17,23,0.80)', stroke:'rgba(248,160,48,0.5)', 'stroke-width':0.5 }, g_scene);
+    tx(lbl, lx, ly, { 'font-size':'9.5', fill:'#f8a030', 'font-weight':'700' });
+  }
+
+  // Horizontal pressure lines (6 levels)
+  for (let i = 0; i <= 6; i++) {
+    const frac = i / 6;
+    const yL = y_surf + frac * (y_ft - y_surf);
+    const px = (res.σa_sup + (res.σa_base - res.σa_sup) * frac) * pScale;
+    if (px < 2) continue;
+    mkEl('line', { x1:x_sr, y1:yL, x2:x_sr + px, y2:yL,
+      stroke:'rgba(248,160,48,0.45)', 'stroke-width':0.65 }, g_scene);
+  }
+
+  // Labels σa: sólo muestra el de superficie si hay sobrecarga (>0), para no solapar "Sup. relleno"
+  if (res.σa_sup > 0.05)
+    tx(`σa=${res.σa_sup.toFixed(1)} kPa`, x_sr + pa_top_px + 6, y_surf + 22,
+      { 'font-size':'10', fill:'#f8a030', 'text-anchor':'start' });
+  tx(`σa=${res.σa_base.toFixed(1)} kPa`, x_sr + pa_base_px + 6, y_ft - 4,
+    { 'font-size':'10', fill:'#f8a030', 'text-anchor':'start' });
+
+  // Pa resultant arrow — actúa en el lado RETENIDO (derecha), apunta a la IZQUIERDA
+  // Convención: Pa empuja la pantalla hacia la izquierda (Ka × γ × H en el talud)
+  const y_Pa = y_surf + (res.H - res.H / 3) * sc;   // 2H/3 desde superficie = H/3 desde pie
+  const paArrowLen = Math.min(100, (x_soil - x_sr) * 0.48 + 12);
+  // Flecha de DERECHA (suelo) hacia IZQUIERDA (cara x_sr): marker-end apunta izquierda
+  mkEl('line', { x1:x_sr + paArrowLen, y1:y_Pa, x2:x_sr + 3, y2:y_Pa,
+    stroke:'#f8a030', 'stroke-width':2.4, 'marker-end':'url(#rw-arr-pa)', opacity:'0.95' }, g_scene);
+  // Pa label en zona de suelo (derecha de la flecha)
+  tx(`Pa = ${res.Pa.toFixed(1)} kN/m`, x_sr + paArrowLen + 7, y_Pa - 7,
+    { 'font-size':'11.5', fill:'#f8a030', 'text-anchor':'start', 'font-weight':'600' });
+  tx(`@ H/3 = ${(res.H / 3).toFixed(2)} m del pie`, x_sr + paArrowLen + 7, y_Pa + 13,
+    { 'font-size':'9.5', fill:'rgba(248,160,48,0.65)', 'text-anchor':'start' });
+
+  // ── PASSIVE PRESSURE Pp (left side of stem, into free terrain) ──
+  if (res.Pp > 0.1 && g.H_emp > 0) {
+    // σp(z) = Kp·γ·z, triángulo desde N.T.N. hasta tope zapata
+    const sigma_pp_base = res.Kp * s.gamma * g.H_emp;         // kPa en base de pantalla
+    const ppAvail  = Math.min(60, (x_sl - x_free) * 0.55);   // px disponibles (55% zona libre)
+    const ppScale  = ppAvail / Math.max(1, sigma_pp_base);     // px/kPa (escala correcta)
+    const ppPxBase = sigma_pp_base * ppScale;                  // px en base
+
+    // Polígono triangular: presión 0 en N.T.N., máx en tope zapata — a la IZQUIERDA de x_sl
+    const ppPts = [
+      `${x_sl},${y_ntn}`,
+      `${x_sl - ppPxBase},${y_ft}`,
+      `${x_sl},${y_ft}`,
+    ].join(' ');
+    mkEl('polygon', { points:ppPts, fill:'rgba(63,185,80,0.18)', stroke:'#3fb950',
+      'stroke-width':1.1, 'stroke-linejoin':'round' }, g_scene);
+
+    // ── Etiqueta ② Resist. Pasiva ──────────────────────────
+    {
+      const lx = x_sl - ppPxBase - 3;
+      const ly = y_ntn + 14;
+      const lbl = '② σp(z)  Resist. Pasiva';
+      const lw = lbl.length * 5.8 + 10;
+      mkEl('rect', { x:lx - lw - 3, y:ly - 10, width:lw, height:13, rx:3,
+        fill:'rgba(13,17,23,0.80)', stroke:'rgba(63,185,80,0.5)', 'stroke-width':0.5 }, g_scene);
+      tx(lbl, lx - 6, ly, { 'font-size':'9.5', fill:'#3fb950', 'font-weight':'700', 'text-anchor':'end' });
+    }
+
+    // Líneas horizontales de nivel
+    for (let i = 1; i <= 4; i++) {
+      const frac = i / 4;
+      const yL  = y_ntn + frac * (y_ft - y_ntn);
+      const px  = frac * ppPxBase;
+      mkEl('line', { x1:x_sl - px, y1:yL, x2:x_sl, y2:yL,
+        stroke:'rgba(63,185,80,0.4)', 'stroke-width':0.6 }, g_scene);
+    }
+
+    // Flecha Pp — actúa de IZQUIERDA (terreno libre) hacia DERECHA (cara x_sl)
+    // Resultante en 1/3 desde la base = 2/3 desde N.T.N.
+    const y_Pp = y_ntn + (g.H_emp * 2 / 3) * sc;
+    const ppArrowLen = Math.min(70, ppPxBase * 0.65 + 18);
+    mkEl('line', { x1:x_sl - ppArrowLen - 8, y1:y_Pp, x2:x_sl - 3, y2:y_Pp,
+      stroke:'#3fb950', 'stroke-width':2.0, 'marker-end':'url(#rw-arr-pp)', opacity:'0.9' }, g_scene);
+    tx(`Pp = ${res.Pp.toFixed(1)} kN/m`, x_sl - ppArrowLen - 12, y_Pp - 7,
+      { 'font-size':'11', fill:'#3fb950', 'text-anchor':'end', 'font-weight':'600' });
+    tx(`@ H_emp/3 = ${(g.H_emp/3).toFixed(2)} m`, x_sl - ppArrowLen - 12, y_Pp + 13,
+      { 'font-size':'9.5', fill:'rgba(63,185,80,0.65)', 'text-anchor':'end' });
+  }
+
+  // ── BEARING PRESSURE DIAGRAM (below footing) ─────────────
+  const qMax = Math.max(res.q_punta, res.q_talon, 1);
+  const qH   = Math.min(52, PAD_B - 60);    // max px height for q diagram
+  const qSc  = qH / qMax;
+  const qp_px = res.q_punta * qSc;
+  const qt_px = res.q_talon * qSc;
+  const y_qb  = y_fb + 5;
+
+  const qPts = [
+    `${x_toe},${y_qb}`,
+    `${x_toe},${y_qb + qp_px}`,
+    `${x_heel},${y_qb + qt_px}`,
+    `${x_heel},${y_qb}`,
+  ].join(' ');
+  mkEl('polygon', { points:qPts, fill:'rgba(88,166,255,0.18)', stroke:'#58a6ff',
+    'stroke-width':1.2, 'stroke-linejoin':'round' }, g_scene);
+  mkEl('line', { x1:x_toe, y1:y_qb, x2:x_heel, y2:y_qb,
+    stroke:'#58a6ff', 'stroke-width':1.4, opacity:'0.7' }, g_scene);
+
+  // ── Etiqueta ④ Presión Base ──────────────────────────────
+  {
+    const lbl = '④ q(x)  Presión Base';
+    const lw = lbl.length * 5.8 + 10;
+    const lx = (x_toe + x_heel) / 2 - lw / 2;
+    const ly = y_qb - 6;
+    mkEl('rect', { x:lx, y:ly - 10, width:lw, height:13, rx:3,
+      fill:'rgba(13,17,23,0.80)', stroke:'rgba(88,166,255,0.5)', 'stroke-width':0.5 }, g_scene);
+    tx(lbl, lx + lw / 2, ly, { 'font-size':'9.5', fill:'#58a6ff', 'font-weight':'700', 'text-anchor':'middle' });
+  }
+
+  // Arrows for q diagram
+  const nQarrows = 4;
+  for (let i = 0; i <= nQarrows; i++) {
+    const frac = i / nQarrows;
+    const xQ = x_toe + frac * (x_heel - x_toe);
+    const qPx = qp_px + frac * (qt_px - qp_px);
+    if (qPx < 6) continue;
+    mkEl('line', { x1:xQ, y1:y_qb, x2:xQ, y2:y_qb + qPx - 5,
+      stroke:'rgba(88,166,255,0.6)', 'stroke-width':1.0, 'marker-end':'url(#rw-arr-q)' }, g_scene);
+  }
+
+  // Labels q_punta / q_talon
+  const y_qLabel = y_qb + Math.max(qp_px, qt_px) + 14;
+  if (qp_px > 5)
+    tx(`${res.q_punta.toFixed(0)} kPa`, x_toe + 3, y_qLabel,
+      { 'font-size':'10.5', fill:'#58a6ff', 'text-anchor':'start', 'font-weight':'600' });
+  if (qt_px > 5)
+    tx(`${res.q_talon.toFixed(0)} kPa`, x_heel - 3, y_qLabel,
+      { 'font-size':'10.5', fill:'#58a6ff', 'text-anchor':'end', 'font-weight':'600' });
+
+  // qAdm check line
+  const qAdm = s.qAdm || 200;
+  const y_qAdm = y_qb + qAdm * qSc;
+  if (y_qAdm < y_qb + qH + 20) {
+    mkEl('line', { x1:x_toe - 14, y1:y_qAdm, x2:x_heel + 14, y2:y_qAdm,
+      stroke:'rgba(248,200,60,0.7)', 'stroke-width':0.8, 'stroke-dasharray':'5,3' }, g_scene);
+    tx(`q_adm = ${qAdm} kPa`, x_heel + 16, y_qAdm + 4,
+      { 'font-size':'10', fill:'#d4a44a', 'text-anchor':'start' });
+  }
+
+  // Warning if outside kern
+  if (res.e > res.e_max)
+    tx('⚠ Resultante fuera del núcleo', (x_toe + x_heel) / 2, y_qb + qH + 28,
+      { 'font-size':'10.5', fill:'#d29922', 'text-anchor':'middle', 'font-weight':'700' });
+
+  // ── RESULTANTE N (vertical, at xR) ───────────────────────
+  const xR_px = x_toe + res.xR * sc;
+  if (xR_px > x_toe + 3 && xR_px < x_heel - 3) {
+    mkEl('line', { x1:xR_px, y1:y_surf - 28, x2:xR_px, y2:y_ft + 5,
+      stroke:'#9a80f0', 'stroke-width':1.8, 'stroke-dasharray':'6,3', opacity:'0.65' }, g_scene);
+    // Arrow N pointing down toward footing base
+    mkEl('line', { x1:xR_px, y1:y_surf - 28, x2:xR_px, y2:y_surf - 6,
+      stroke:'#9a80f0', 'stroke-width':2.2, 'marker-end':'url(#rw-arr-n)', opacity:'0.9' }, g_scene);
+    tx('N', xR_px + 5, y_surf - 14,
+      { 'font-size':'11', fill:'#9a80f0', 'text-anchor':'start', 'font-weight':'700' });
+    tx(`e=${(res.e*100).toFixed(1)}cm`, xR_px, y_ft + 16,
+      { 'font-size':'9.5', fill:'#9a80f0', 'text-anchor':'middle' });
+    mkEl('line', { x1:xR_px - 5, y1:y_qb + 2, x2:xR_px + 5, y2:y_qb + 2,
+      stroke:'#9a80f0', 'stroke-width':2, opacity:'0.7' }, g_scene);
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // WEIGHTS (arrows pointing down, to the right of their centroid)
+  // ══════════════════════════════════════════════════════════
+  const wLabelX = x_heel + 16;
+
+  // W pantalla
+  const cx_stem = (x_sl + x_sr) / 2;
+  const y_wPant = y_surf + (y_ft - y_surf) * 0.4;
+  mkEl('line', { x1:cx_stem, y1:y_wPant - 18, x2:cx_stem, y2:y_wPant - 4,
+    stroke:'rgba(200,200,200,0.45)', 'stroke-width':1.5, 'marker-end':'url(#rw-arr-n)' }, g_scene);
+
+  // W zapata
+  const cx_zap = (x_toe + x_heel) / 2;
+  const y_wZap = (y_ft + y_fb) / 2;
+  mkEl('line', { x1:cx_zap, y1:y_wZap - 18, x2:cx_zap, y2:y_wZap - 4,
+    stroke:'rgba(200,200,200,0.45)', 'stroke-width':1.5, 'marker-end':'url(#rw-arr-n)' }, g_scene);
+
+  // W suelo (sobre talón)
+  if (res.B_talon > 0.02) {
+    const cx_soil_h = x_sr + (x_heel - x_sr) / 2;
+    const y_wSoil = y_surf + (y_ft - y_surf) * 0.5;
+    mkEl('line', { x1:cx_soil_h, y1:y_wSoil - 18, x2:cx_soil_h, y2:y_wSoil - 4,
+      stroke:'rgba(139,104,20,0.55)', 'stroke-width':1.5, 'marker-end':'url(#rw-arr-n)' }, g_scene);
+  }
+
+  // Weight table (right of drawing)
+  const wTX = x_soil + DIM_ZONE_R - 5;
+  tx('Pesos (kN/m)', wTX, y_surf + 12, { 'font-size':'10', fill:'rgba(200,200,200,0.6)', 'text-anchor':'end', 'font-weight':'700' });
+  tx(`W_pantalla = ${res.W_pantalla.toFixed(1)}`, wTX, y_surf + 26, { 'font-size':'9.5', fill:'rgba(200,200,200,0.55)', 'text-anchor':'end' });
+  tx(`W_zapata   = ${res.W_zapata.toFixed(1)}`,   wTX, y_surf + 39, { 'font-size':'9.5', fill:'rgba(200,200,200,0.55)', 'text-anchor':'end' });
+  tx(`W_suelo    = ${res.W_suelo.toFixed(1)}`,    wTX, y_surf + 52, { 'font-size':'9.5', fill:'rgba(200,200,200,0.55)', 'text-anchor':'end' });
+  tx(`N total    = ${res.N.toFixed(1)}`,           wTX, y_surf + 67, { 'font-size':'10', fill:'#9a80f0', 'text-anchor':'end', 'font-weight':'700' });
+
+  // ══════════════════════════════════════════════════════════
+  // DIMENSION LINES
+  // ══════════════════════════════════════════════════════════
+
+  // ── Horizontal dims (below footing, stacked) ─────────────
+  const y_dim1 = y_fb + baseH + 14;   // first row
+  const y_dim2 = y_dim1 + 22;          // B_zap total
+  dimH(g_scene, tx, x_toe,  x_sl,   y_dim1, `${(g.B_toe*100).toFixed(0)}`);
+  dimH(g_scene, tx, x_sl,   x_sr,   y_dim1, `${(g.t_muro*100).toFixed(0)}`);
+  if (res.B_talon > 0.01)
+    dimH(g_scene, tx, x_sr, x_heel, y_dim1, `${(res.B_talon*100).toFixed(0)}`);
+  dimH(g_scene, tx, x_toe, x_heel,  y_dim2, `B = ${(g.B_zap*100).toFixed(0)} cm`);
+
+  // ── Vertical dims (right side) ───────────────────────────
+  const xDv1 = x_soil + 20;   // first column
+  const xDv2 = xDv1 + 30;     // second column (H_total)
+  dimV(g_scene, tx, xDv1, y_surf, y_ntn,  `${(g.H_libre*100).toFixed(0)} cm`);
+  dimV(g_scene, tx, xDv1, y_ntn,  y_ft,   `${(g.H_emp*100).toFixed(0)} cm`);
+  dimV(g_scene, tx, xDv1, y_ft,   y_fb,   `${(g.Hf*100).toFixed(0)} cm`);
+  dimV(g_scene, tx, xDv2, y_surf, y_fb,   `H = ${(res.H_total*100).toFixed(0)} cm`);
+
+  // ── Left vertical dim (height of stem H_libre+H_emp) ─────
+  const xDvL = x_free - 18;
+  dimV(g_scene, tx, xDvL, y_surf, y_ft, `${(res.H*100).toFixed(0)} cm`, '#f8a030');
+
+  // ══════════════════════════════════════════════════════════
+  // LABELS
+  // ══════════════════════════════════════════════════════════
+
+  // N.T.N. free side
+  tx('N.T.N.', x_sl - 6, y_ntn - 5,
+    { 'font-size':'10.5', fill:'#3fb950', 'text-anchor':'end', 'font-weight':'600' });
+
+  // Sup. relleno — encima de la línea de superficie
+  tx('Sup. relleno', x_sr + 6, y_surf - 5,
+    { 'font-size':'10', fill:'#3fb950', 'text-anchor':'start' });
+
+  // Pantalla label (vertical, rotated)
+  const cx_s = (x_sl + x_sr) / 2;
+  const cy_s = y_surf + (y_ft - y_surf) / 2;
+  tx('PANTALLA', cx_s, cy_s + 3,
+    { 'font-size':'9', fill:'rgba(200,200,200,0.40)', 'text-anchor':'middle',
+      transform:`rotate(-90,${cx_s},${cy_s})` });
+
+  // Zapata label
+  tx('ZAPATA', (x_toe + x_heel) / 2, (y_ft + y_fb) / 2 + 4,
+    { 'font-size':'9', fill:'rgba(200,200,200,0.45)', 'text-anchor':'middle' });
+
+  // Soil zone labels (bottom of each zone)
+  const yZL = y_fb + baseH + 6;
+  tx('Terreno natural', (x_free + x_sl) / 2, yZL,
+    { 'font-size':'9.5', fill:'rgba(90,122,66,0.85)', 'text-anchor':'middle', 'font-style':'italic' });
+  tx('Base estabilizada CBR~80%', (x_toe + x_heel) / 2, yZL,
+    { 'font-size':'9.5', fill:'rgba(200,152,42,0.85)', 'text-anchor':'middle', 'font-style':'italic' });
+  tx('Grava drenante GP', (x_sr + x_soil) / 2, y_surf + (y_ft - y_surf) / 2,
+    { 'font-size':'9.5', fill:'rgba(139,104,20,0.85)', 'text-anchor':'middle', 'font-style':'italic' });
+
+  // ── FS chips ─────────────────────────────────────────────
+  const fsv = res.FS_volcamiento, fsd = res.FS_deslizamiento;
+  const fsvC = fsv >= 1.5 ? '#3fb950' : (fsv >= 1.2 ? '#d29922' : '#f85149');
+  const fsdC = fsd >= 1.5 ? '#3fb950' : (fsd >= 1.2 ? '#d29922' : '#f85149');
+  chip(g_scene, tx, x_free, y_surf + 4, `FS vol. = ${isFinite(fsv)?fsv.toFixed(2):'∞'}`, fsvC);
+  chip(g_scene, tx, x_free, y_surf + 24, `FS des. = ${isFinite(fsd)?fsd.toFixed(2):'∞'}`, fsdC);
+
+  // ── Mo / Mr summary ──────────────────────────────────────
+  tx(`Mr = ${res.Mr.toFixed(1)} kN·m/m`, x_free, y_ntn + 20,
+    { 'font-size':'9.5', fill:'rgba(63,185,80,0.75)' });
+  tx(`Mo = ${res.Mo.toFixed(1)} kN·m/m`, x_free, y_ntn + 33,
+    { 'font-size':'9.5', fill:'rgba(248,160,48,0.75)' });
+
+  // ── Title ────────────────────────────────────────────────
+  tx('SECCIÓN TRANSVERSAL — MURO DE CONTENCIÓN', SW / 2, 22,
+    { 'font-size':'13', fill:'rgba(230,237,243,0.55)', 'text-anchor':'middle',
+      'font-weight':'700', 'letter-spacing':'0.06em' });
+  tx(`Rankine · φ=${s.phi}° · γ=${s.gamma}kN/m³ · Ka=${res.Ka.toFixed(3)}`,
+    SW / 2, 38, { 'font-size':'10', fill:'rgba(139,148,158,0.7)', 'text-anchor':'middle' });
+
+  // Apply stored transform
+  applyTransform();
+}
+
+// ══════════════════════════════════════════════════════════════
+// DIMENSION HELPERS
+// ══════════════════════════════════════════════════════════════
+function dimH(parent, tx, x1, x2, y, label, color) {
+  if (Math.abs(x2 - x1) < 4) return;
+  const col = color || 'rgba(110,118,129,0.7)';
+  const ns = 'http://www.w3.org/2000/svg';
+  const mk = (tag, at) => { const e = document.createElementNS(ns,tag); Object.entries(at).forEach(([k,v])=>e.setAttribute(k,v)); parent.appendChild(e); return e; };
+  mk('line',    { x1, y1:y, x2, y2:y, stroke:col, 'stroke-width':0.65 });
+  mk('polygon', { points:`${x1},${y} ${x1+4},${y-1.5} ${x1+4},${y+1.5}`, fill:col });
+  mk('polygon', { points:`${x2},${y} ${x2-4},${y-1.5} ${x2-4},${y+1.5}`, fill:col });
+  const cx = (x1 + x2) / 2;
+  const txtW = Math.max(28, label.length * 6.2);
+  mk('rect', { x:cx-txtW/2, y:y-10, width:txtW, height:13, rx:3, fill:'#0d1117', stroke:col, 'stroke-width':0.4 });
+  tx(label, cx, y, { 'font-size':'10.5', fill:'#c9d1d9', 'text-anchor':'middle', 'font-weight':'600', dy:'-0.5' }, parent);
+}
+
+function dimV(parent, tx, x, y1, y2, label, color) {
+  if (Math.abs(y2 - y1) < 4) return;
+  const col = color || 'rgba(110,118,129,0.7)';
+  const ns = 'http://www.w3.org/2000/svg';
+  const mk = (tag, at) => { const e = document.createElementNS(ns,tag); Object.entries(at).forEach(([k,v])=>e.setAttribute(k,v)); parent.appendChild(e); return e; };
+  mk('line',    { x1:x, y1, x2:x, y2, stroke:col, 'stroke-width':0.65 });
+  mk('polygon', { points:`${x},${y1} ${x-1.5},${y1+4} ${x+1.5},${y1+4}`, fill:col });
+  mk('polygon', { points:`${x},${y2} ${x-1.5},${y2-4} ${x+1.5},${y2-4}`, fill:col });
+  const cy = (y1 + y2) / 2;
+  const txtW = Math.max(30, label.length * 6.2);
+  mk('rect', { x:x-txtW/2, y:cy-7, width:txtW, height:13, rx:3, fill:'#0d1117', stroke:col, 'stroke-width':0.4 });
+  tx(label, x, cy + 4, { 'font-size':'10.5', fill:'#c9d1d9', 'text-anchor':'middle', 'font-weight':'600' }, parent);
+}
+
+function chip(parent, tx, x, y, label, color) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const w = label.length * 6.2 + 14;
+  const e = document.createElementNS(ns, 'rect');
+  Object.entries({ x, y, width:w, height:16, rx:4,
+    fill:`${color}22`, stroke:color, 'stroke-width':0.9 }).forEach(([k,v])=>e.setAttribute(k,v));
+  parent.appendChild(e);
+  tx(label, x + w/2, y + 11, { 'font-size':'10', fill:color, 'text-anchor':'middle', 'font-weight':'700' }, parent);
+}
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+setupPanZoom();
+refresh();
+resetView();   // fit scene to container on load
+window.addEventListener('resize', () => { refresh(); resetView(); });
+</script>
+</body>
+</html>

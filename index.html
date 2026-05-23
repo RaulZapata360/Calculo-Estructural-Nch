@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <script>
+    // Clean up stale service workers from other localhost projects silently in the background
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (const registration of registrations) {
+          registration.unregister().then(success => {
+            if (success) {
+              console.log('Cleaned up stale service worker from other localhost project:', registration);
+            }
+          });
+        }
+      });
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diseñador Estructural | Cálculo de Fuerzas Internas</title>
+  <meta name="description" content="Diseño interactivo de muros de albañilería confinada con cálculo de fuerzas internas y armaduras.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     LEFT SIDEBAR — Global Controls
+══════════════════════════════════════════ -->
+<aside id="sidebar-left">
+  <div class="sidebar-logo">
+    <div class="logo-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    </div>
+    <div>
+      <h1>EstructuraCalc</h1>
+      <p style="font-size:0.68rem;color:var(--text-muted)">Albañilería Confinada · NCh430</p>
+    </div>
+  </div>
+
+  <!-- Navegación entre módulos -->
+  <a href="muro-contencion.html" style="display:flex;align-items:center;gap:7px;padding:7px 10px;margin:0 0 4px 0;background:rgba(47,129,247,0.07);border:1px solid rgba(47,129,247,0.25);border-radius:6px;color:#58a6ff;font-size:0.73rem;font-weight:600;text-decoration:none;transition:all 0.13s;" onmouseover="this.style.background='rgba(47,129,247,0.14)'" onmouseout="this.style.background='rgba(47,129,247,0.07)'">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 20h18M3 20V7l9-4 9 4v13M9 20v-5h6v5"/></svg>
+    Muro de Contención →
+  </a>
+
+  <!-- Tabs -->
+  <div class="sidebar-tabs">
+    <button class="tab-btn" data-tab="config" id="tab-config">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 0l4.24-4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.08 0l4.24 4.24"/></svg>
+      Configuración
+    </button>
+    <button class="tab-btn active" data-tab="geometry" id="tab-geometry">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      Geometría
+    </button>
+    <button class="tab-btn" data-tab="loads" id="tab-loads">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+      Cargas
+    </button>
+    <button class="tab-btn" data-tab="materials" id="tab-materials">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2v20M2 12h20"/></svg>
+      Materiales
+    </button>
+    <button class="tab-btn" data-tab="foundation" id="tab-foundation">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 3v12M18 3v12M3 15h18M3 19h18" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Fundaciones
+    </button>
+    <button class="tab-btn" data-tab="ai-advisor" id="tab-ai-advisor">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.808 13.061l.707-.707M12 18a6 6 0 100-12 6 6 0 000 12z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Asesor IA
+    </button>
+  </div>
+
+  <div class="sidebar-body">
+
+    <!-- TAB: CONFIGURATION -->
+    <div id="tab-content-config" style="display:none">
+      <div class="card">
+        <h3>API de Claude Anthropic</h3>
+        <p style="font-size:0.68rem;color:var(--text-muted);margin-bottom:0.75rem;">
+          Ingresa tu API Key de Claude para activar el Asesor IA con análisis de cálculos estructurales.
+        </p>
+
+        <div class="field">
+          <label>API Key <span>sk-ant-v1-...</span></label>
+          <input
+            type="password"
+            id="claude-api-key-input"
+            placeholder="sk-ant-v1-..."
+            style="width:100%; padding:8px; margin:10px 0; font-family: 'JetBrains Mono', monospace; font-size:0.75rem;"
+          />
+          <small style="color:#666;display:block;margin-top:4px;">
+            Tu API Key es privada y se guarda solo en el servidor (.env)
+          </small>
+        </div>
+
+        <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+          <button id="btn-save-claude-key" class="btn-primary" style="flex:1;padding:0.6rem;">
+            💾 Guardar API Key
+          </button>
+          <button id="btn-test-claude-key" class="btn-secondary" style="flex:1;padding:0.6rem;">
+            🧪 Probar
+          </button>
+        </div>
+
+        <div id="claude-api-status" style="margin-top:1rem;padding:0.75rem;background:rgba(255,255,255,0.04);border-radius:4px;border-left:3px solid rgba(255,255,255,0.2);display:none;">
+          <span id="claude-api-status-text" style="font-size:0.7rem;color:var(--text-muted);"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Estado de Configuración</h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem;background:rgba(255,255,255,0.04);border-radius:4px;margin-bottom:0.75rem;">
+          <span style="font-size:0.75rem;">API Key:</span>
+          <span id="claude-key-status-badge" style="font-size:0.7rem;padding:2px 8px;background:#dc3545;color:#fff;border-radius:3px;font-weight:600;">❌ No configurada</span>
+        </div>
+        <p style="font-size:0.65rem;color:var(--text-muted);line-height:1.4;">
+          <strong>Obtén tu API Key:</strong><br/>
+          1. Ve a <a href="https://console.anthropic.com/" target="_blank" style="color:#58a6ff;">console.anthropic.com</a><br/>
+          2. Crea una cuenta o inicia sesión<br/>
+          3. Copia tu API Key<br/>
+          4. Pégala arriba y presiona "Guardar"
+        </p>
+      </div>
+    </div>
+
+    <!-- TAB: FOUNDATION -->
+    <div id="tab-content-foundation" style="display:none">
+      <div class="card">
+        <h3>Geometría de la Zapata Corrida</h3>
+        <div class="field-row">
+          <div class="field">
+            <label>Ancho B <span>m</span></label>
+            <input type="number" id="f-B" value="0.60" step="0.05" min="0.30" max="3.00">
+          </div>
+          <div class="field">
+            <label>Espesor H<sub>f</sub> <span>m</span></label>
+            <input type="number" id="f-Hf" value="0.35" step="0.05" min="0.15" max="1.50">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Profundidad D<sub>f</sub> <span>m</span></label>
+            <input type="number" id="f-Df" value="0.80" step="0.05" min="0.30" max="5.00">
+          </div>
+          <div class="field">
+            <label>Inclin. Talud β <span>°</span></label>
+            <input type="number" id="f-beta" value="0" step="1" min="0" max="45">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Parámetros Geotécnicos</h3>
+        <div class="field-row">
+          <div class="field">
+            <label>Prof. NF <span>m</span></label>
+            <input type="number" id="f-NF" value="3.0" step="0.10" min="0" max="20">
+          </div>
+          <div class="field">
+            <label>Factor Seg. FS</label>
+            <input type="number" id="f-FS" value="3.0" step="0.5" min="1.5" max="5.0">
+          </div>
+        </div>
+        <p style="font-size:0.68rem;color:var(--text-muted);margin-top:2px;">
+          Nivel Freático desde superficie · <b>NF = ∞</b> → suelo seco
+        </p>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+          <h3 style="margin:0;">Estratigrafía del Suelo</h3>
+          <button id="btn-add-stratum" class="btn-add-stratum">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+            Agregar Estrato
+          </button>
+        </div>
+        <p style="font-size:0.68rem;color:var(--text-muted);margin-bottom:0.5rem;">
+          Estratos desde superficie hacia abajo. El estrato que contiene D<sub>f</sub> es el de apoyo.
+        </p>
+        <div id="strata-container"></div>
+      </div>
+
+      <div class="card">
+        <h3>Verificación Geotécnica (Hansen)</h3>
+        <div style="display:flex;justify-content:space-between;font-size:0.73rem;margin-bottom:6px;">
+          <span>q<sub>ult</sub> calculado:</span>
+          <strong id="soil-qult-val" style="color:var(--accent)">— kPa</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.73rem;margin-bottom:6px;">
+          <span>q<sub>adm</sub> (÷FS):</span>
+          <strong id="soil-qadm-val" style="color:var(--success)">— kPa</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.73rem;margin-bottom:8px;">
+          <span>σ<sub>contacto</sub>:</span>
+          <strong id="soil-stress-val">— kPa</strong>
+        </div>
+        <div class="progress-bar-bg" style="width:100%;height:8px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden;">
+          <div id="soil-stress-bar" style="width:0%;height:100%;background:var(--success);transition:width 0.4s ease;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.65rem;margin-top:4px;color:var(--text-muted);">
+          <span>Estrato Apoyo: <span id="soil-support-lbl" style="color:var(--text)">—</span></span>
+          <span id="soil-status-badge" style="padding:2px 6px;border-radius:3px;font-weight:600;color:#fff;background:var(--success);font-size:0.6rem;">OK</span>
+        </div>
+      </div>
+
+      <!-- EVALUACIÓN DE VOLCAMIENTO Y DESLIZAMIENTO -->
+      <div class="card">
+        <h3>Evaluación de Estabilidad</h3>
+        <p style="font-size:0.68rem;color:var(--text-muted);margin-bottom:0.75rem;">
+          Análisis de volcamiento y deslizamiento según NCh433 (casos de carga lateral desfavorables)
+        </p>
+
+        <div style="margin-bottom:0.75rem;">
+          <div style="font-size:0.7rem;font-weight:600;color:var(--text);margin-bottom:4px;">Volcamiento (Overturning)</div>
+          <div style="display:flex;gap:0.5rem;margin-bottom:6px;">
+            <div style="flex:1;padding:0.5rem;background:rgba(88,166,255,0.06);border-radius:3px;">
+              <div style="font-size:0.65rem;color:var(--text-muted);margin-bottom:2px;">Hacia Casa (→)</div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                <span style="font-size:0.7rem;">FS</span>
+                <strong id="fs-volc-pos" style="color:#58a6ff;font-size:0.75rem;">—</strong>
+              </div>
+            </div>
+            <div style="flex:1;padding:0.5rem;background:rgba(88,166,255,0.06);border-radius:3px;">
+              <div style="font-size:0.65rem;color:var(--text-muted);margin-bottom:2px;">Hacia Vecino (←)</div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                <span style="font-size:0.7rem;">FS</span>
+                <strong id="fs-volc-neg" style="color:#58a6ff;font-size:0.75rem;">—</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:0.75rem;">
+          <div style="font-size:0.7rem;font-weight:600;color:var(--text);margin-bottom:4px;">Deslizamiento (Sliding)</div>
+          <div style="padding:0.5rem;background:rgba(45,194,107,0.06);border-radius:3px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <span style="font-size:0.7rem;">FS Deslizamiento (μ·N/H)</span>
+              <strong id="fs-desl" style="color:#2dc26b;font-size:0.75rem;">—</strong>
+            </div>
+          </div>
+        </div>
+
+        <div id="foundation-advisor-status" style="padding:0.5rem;background:rgba(255,255,255,0.04);border-radius:3px;border-left:3px solid rgba(255,255,255,0.2);">
+          <div style="font-size:0.68rem;color:var(--text-muted);">
+            <span style="display:inline-block;padding:2px 6px;background:rgba(210,153,34,0.15);border-radius:2px;color:#d29922;font-weight:600;margin-bottom:4px;">⚠ Requiere Asesor IA</span>
+            <p>Haz clic en la pestaña <strong>Asesor IA</strong> para obtener recomendaciones de diseño de fundación (aumento de B, profundidad, etc.)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: GEOMETRY -->
+    <div id="tab-content-geometry">
+      <div class="card">
+        <h3>Dimensiones del Muro</h3>
+        <div class="field-row">
+          <div class="field">
+            <label>Largo L <span>m</span></label>
+            <input type="number" id="g-L" value="5.62" step="0.1" min="0.5" max="20">
+          </div>
+          <div class="field">
+            <label>Altura H <span>m</span></label>
+            <input type="number" id="g-H" value="2.40" step="0.1" min="0.5" max="10">
+          </div>
+        </div>
+        <div class="field">
+          <label>Espesor Muro <span>cm</span></label>
+          <input type="number" id="g-tw" value="14" step="1" min="10">
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Pilares (Columnas)</h3>
+        <div class="field-row">
+          <div class="field">
+            <label>Ancho b <span>cm</span></label>
+            <input type="number" id="g-cb" value="20" step="1" min="10">
+          </div>
+          <div class="field">
+            <label>Profundidad h <span>cm</span></label>
+            <input type="number" id="g-ch" value="15" step="1" min="10">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Vigas / Cadenas</h3>
+        <div class="field-row">
+          <div class="field">
+            <label>Ancho b <span>cm</span></label>
+            <input type="number" id="g-bb" value="20" step="1" min="10">
+          </div>
+          <div class="field">
+            <label>Altura h <span>cm</span></label>
+            <input type="number" id="g-bh" value="20" step="1" min="10">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: LOADS -->
+    <div id="tab-content-loads" style="display:none">
+      <div class="card">
+        <h3>Carga Distribuida Superior</h3>
+        <div class="field">
+          <label>Carga Muerta q<sub>D</sub> <span>kN/m</span></label>
+          <input type="number" id="l-qD" value="8" step="0.5" min="0">
+        </div>
+        <div class="field">
+          <label>Carga Viva q<sub>L</sub> <span>kN/m</span></label>
+          <input type="number" id="l-qL" value="4" step="0.5" min="0">
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Factores LRFD (NCh3171)</h3>
+        <div class="field-row">
+          <div class="field">
+            <label>Factor D</label>
+            <input type="number" id="l-fd" value="1.2" step="0.05">
+          </div>
+          <div class="field">
+            <label>Factor L</label>
+            <input type="number" id="l-fl" value="1.6" step="0.05">
+          </div>
+        </div>
+        <p style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">
+          q<sub>u</sub> = 1.2·D + 1.6·L
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>Carga de Techo (en Coronación)</h3>
+        <div class="field">
+          <label>Carga Techo q<sub>Roof</sub> <span>kN/m</span></label>
+          <input type="number" id="l-qRoof" value="2.5" step="0.5" min="0">
+        </div>
+        <div class="field">
+          <label>Factor Techo f<sub>Roof</sub></label>
+          <input type="number" id="l-fRoof" value="1.2" step="0.05" min="0">
+        </div>
+        <p style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;">
+          Carga de estructura metalcon en coronación del muro
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>Cargas Laterales (Sismo + Viento)</h3>
+
+        <div class="field">
+          <label>Zona Sísmica (NCh433)</label>
+          <select id="l-seismic-zone">
+            <option value="1">Zona 1 — A₀=0.20g</option>
+            <option value="2">Zona 2 — A₀=0.30g</option>
+            <option value="3" selected>Zona 3 — A₀=0.40g (Concepción)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Tipo de Suelo (NCh433 D.S.61)</label>
+          <select id="l-soil-type">
+            <option value="A">A — Roca dura</option>
+            <option value="B">B — Roca blanda / suelo cementado</option>
+            <option value="C">C — Suelo denso o muy firme</option>
+            <option value="D" selected>D — Suelo medio (SP, SM)</option>
+            <option value="E">E — Suelo blando</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Categoría Importancia I (NCh433)</label>
+          <select id="l-importance">
+            <option value="0.6">I — Aislada (I=0.6)</option>
+            <option value="1.0" selected>II — Habitacional (I=1.0)</option>
+            <option value="1.2">III — Pública/escolar (I=1.2)</option>
+            <option value="1.2">IV — Gobierno/emergencia (I=1.2)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>V<sub>basic</sub> Viento <span>m/s (NCh432)</span></label>
+          <input type="number" id="l-wind-v" value="35" step="1" min="20" max="55">
+        </div>
+
+        <div style="margin-top:0.5rem;padding:0.5rem;background:rgba(210,153,34,0.08);border-radius:4px;border:1px solid rgba(210,153,34,0.25);">
+          <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:3px;">
+            <span style="color:var(--text-muted);">Coef. sísmico C<sub>s</sub>:</span>
+            <span id="l-Cs-display" style="color:#d29922;font-weight:600;">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.75rem;">
+            <span style="color:var(--text-muted);">q dinámica viento:</span>
+            <span id="l-qw-display" style="color:#58a6ff;font-weight:600;">—</span>
+          </div>
+        </div>
+
+        <div style="margin-top:0.75rem;">
+          <div style="font-size:0.7rem;font-weight:600;color:var(--text);margin-bottom:0.5rem;">Cargas Distribuidas (Columnas)</div>
+          <div class="field">
+            <label>w viento <span>kN/m</span></label>
+            <input type="number" id="l-ww" value="0" step="0.1" min="0">
+          </div>
+          <div class="field">
+            <label>w sismo <span>kN/m</span></label>
+            <input type="number" id="l-ws" value="0" step="0.1" min="0">
+          </div>
+          <div id="critical-case-display" style="display:none;margin-top:0.5rem;padding:0.4rem;background:rgba(255,107,107,0.1);border-radius:3px;border-left:3px solid #ff6b6b;">
+            <div style="font-size:0.65rem;color:var(--text-muted);margin-bottom:2px;">Caso Crítico (Diseño):</div>
+            <div style="font-size:0.75rem;color:#ff6b6b;font-weight:600;" id="critical-case-label">Peso + Vertical</div>
+          </div>
+        </div>
+
+        <!-- ── Esquema Visual de Cargas Laterales ── -->
+        <div id="lateral-load-schematic" style="margin-top:0.75rem;display:none;">
+          <div style="font-size:0.7rem;font-weight:600;color:var(--text);margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.04em;">
+            Esquema de Fuerzas Laterales
+          </div>
+          <svg id="lateral-scheme-svg" width="100%" viewBox="0 0 240 165"
+               xmlns="http://www.w3.org/2000/svg"
+               style="border-radius:4px;border:1px solid rgba(255,255,255,0.08);display:block;">
+          </svg>
+          <!-- Tabla de resumen debajo del esquema -->
+          <div id="lateral-summary-table" style="margin-top:0.5rem;font-size:0.7rem;"></div>
+        </div>
+
+        <!-- Botón para abrir el DCL completo -->
+        <button id="btn-lateral-dcl"
+          onclick="LateralDCL.open()"
+          style="
+            width:100%; margin-top:0.6rem; padding:7px 0;
+            background:rgba(88,166,255,0.08);
+            border:1px solid rgba(88,166,255,0.35);
+            border-radius:5px; color:#58a6ff;
+            font-size:0.72rem; font-weight:600; cursor:pointer;
+            letter-spacing:0.03em; transition:background 0.15s;
+          "
+          onmouseover="this.style.background='rgba(88,166,255,0.18)'"
+          onmouseout="this.style.background='rgba(88,166,255,0.08)'"
+        >
+          🔍 Ver DCL + Memoria de Cálculo Lateral
+        </button>
+
+        <p style="font-size:0.7rem;color:var(--text-muted);margin-top:6px;">
+          Sismo bidireccional. Para zapata L se evalúan ambos sentidos.
+        </p>
+      </div>
+
+      <!-- COMBINACIONES DE CARGAS -->
+      <div class="card">
+        <h3>Combinaciones de Cargas</h3>
+        <div style="margin-bottom:1rem;">
+          <button id="combo-toggle-lrfd" class="combo-toggle active" style="margin-right:0.5rem;">LRFD (Resistencia)</button>
+          <button id="combo-toggle-asd" class="combo-toggle">ASD (Tensiones)</button>
+        </div>
+
+        <!-- LRFD Combinations -->
+        <div id="combo-lrfd-list" style="display:block;">
+          <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.75rem;">
+            <strong>Diseño por Resistencia (LRFD)</strong> — factores mayorados según NCh3171
+          </div>
+          <div id="lrfd-combos-container"></div>
+        </div>
+
+        <!-- ASD Combinations -->
+        <div id="combo-asd-list" style="display:none;">
+          <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.75rem;">
+            <strong>Diseño por Tensiones Admisibles (ASD)</strong> — cargas nominales
+          </div>
+          <div id="asd-combos-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: MATERIALS -->
+    <div id="tab-content-materials" style="display:none">
+      <div class="card">
+        <h3>Hormigón (Confinamiento)</h3>
+        <div class="field">
+          <label>Resistencia f'c <span>MPa</span></label>
+          <select id="m-fc">
+            <option value="20">G20 — 20 MPa</option>
+            <option value="25" selected>G25 — 25 MPa</option>
+            <option value="30">G30 — 30 MPa</option>
+            <option value="35">G35 — 35 MPa</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Fluencia acero f<sub>y</sub> <span>MPa</span></label>
+          <select id="m-fy">
+            <option value="420" selected>A630-420H — 420 MPa</option>
+            <option value="280">A440-280H — 280 MPa</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Peso específico γ<sub>c</sub> <span>kN/m³</span></label>
+          <input type="number" id="m-gc" value="25" step="0.5">
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Albañilería</h3>
+        <div class="field">
+          <label>Tipo de ladrillo</label>
+          <select id="m-brick">
+            <option value="18">Industrial cerámico — 18 kN/m³</option>
+            <option value="20">Bloque de hormigón — 20 kN/m³</option>
+            <option value="16">Ladrillo artesanal — 16 kN/m³</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Peso específico γ<sub>m</sub> <span>kN/m³</span></label>
+          <input type="number" id="m-gm" value="18" step="0.5">
+        </div>
+        <div class="field">
+          <label>Recubrimiento <span>cm</span></label>
+          <input type="number" id="m-rec" value="3" step="0.5" min="2">
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: AI ADVISOR -->
+    <div id="tab-content-ai-advisor" style="display:none">
+      <div class="card" style="display:flex; flex-direction:column; gap:12px;">
+        <h3>Análisis y Recomendaciones de la IA</h3>
+        <p class="section-desc" style="font-size:0.68rem; color:var(--text-muted); line-height:1.35; margin-bottom:4px;">
+          Esta interfaz interpreta en tiempo real los diagramas de esfuerzos de flexión (M), corte (V) y axial (N) según la norma chilena NCh430 y ACI 318.
+        </p>
+        
+        <button id="btn-open-ai-chat" class="btn-primary" style="margin-bottom:8px; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.808 13.061l.707-.707M12 18a6 6 0 100-12 6 6 0 000 12z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Abrir Chat Interactivo
+        </button>
+
+        <div id="ai-advisor-content" class="ai-box">
+          <div style="text-align:center; padding:32px 16px; color:var(--text-muted); display:flex; flex-direction:column; align-items:center; gap:8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="opacity:0.4;"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.808 13.061l.707-.707M12 18a6 6 0 100-12 6 6 0 000 12z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span style="font-weight:600; font-size:0.8rem; color:var(--text-primary);">Sin Elemento Seleccionado</span>
+            <p style="font-size:0.7rem; line-height:1.4;">Haz clic en una viga, columna o muro en el panel central para que la IA interprete sus diagramas y genere recomendaciones de armado estructural.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button id="solve-btn">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    MEMORIA DE CÁLCULO
+  </button>
+  <button id="save-btn" class="btn-save">
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    GUARDAR PROYECTO
+  </button>
+  <button id="load-btn" class="btn-load">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12H19M12 5l7 7-7 7"/></svg>
+    CARGAR PROYECTO
+  </button>
+  <input type="file" id="file-load-input" accept=".json" style="display:none">
+</aside>
+
+<!-- ═══════════════════════════════════════
+     MAIN — Canvas Viewport
+══════════════════════════════════════════ -->
+<div id="viewport-wrap">
+
+  <!-- Floating Toolbar (top center) -->
+  <div id="float-toolbar">
+    <button class="tool-btn active" id="tool-select" title="Seleccionar elemento (S)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 3l14 9-7 2-2 7z"/></svg>
+    </button>
+    <button class="tool-btn" id="tool-hand" title="Mano — Arrastrar vista (H)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+        <path d="M18 11V8a2 2 0 0 0-2-2 2 2 0 0 0-2 2V7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v1a2 2 0 0 0-2-2 2 2 0 0 0-2 2v9a6 6 0 0 0 12 0v-5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="toolbar-sep"></div>
+    <button class="tool-btn" id="tool-add-span" title="Agregar vano">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+    <button class="tool-btn" id="tool-remove-span" title="Eliminar último vano" style="display:none">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+    <div class="toolbar-sep"></div>
+    <button class="tool-btn" id="tool-zoom-in" title="Acercar (Zoom In)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+    </button>
+    <button class="tool-btn" id="tool-zoom-out" title="Alejar (Zoom Out)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+    </button>
+    <button class="tool-btn" id="tool-focus-selection" title="Enfocar selección">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v4m0 8v4M4 12h4m8 0h4M4 4l4 4m8 8l4 4m0-16l-4 4m-8 8l-4 4"/></svg>
+    </button>
+    <div class="toolbar-sep"></div>
+    <button class="tool-btn" id="tool-view-all-sections" title="Ver Planos de Armadura (Todos los cortes)" style="display:flex; align-items:center; gap:4px; padding: 0 8px; width:auto; border-radius:4px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      <span style="font-size:0.75rem; font-weight:bold;">Planos de Armadura</span>
+    </button>
+    <button class="tool-btn" id="tool-reset-view" title="Centrar estructura (doble click)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.36 2.64"/><path d="M3 3v6h6"/></svg>
+    </button>
+    <div class="toolbar-sep"></div>
+    <button class="tool-btn" id="tool-view-3d" title="Vista 3D" style="display:flex;align-items:center;gap:4px;padding:0 10px;width:auto;border-radius:4px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span style="font-size:0.75rem;font-weight:700;">Vista 3D</span>
+    </button>
+  </div>
+
+  <!-- ═══ MODAL 3D ════════════════════════════════════════ -->
+  <div id="modal-3d" style="display:none;position:fixed;inset:0;z-index:10500;flex-direction:column;background:#0d1117;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#161b22;border-bottom:1px solid #30363d;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="#58a6ff" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <span style="color:#58a6ff;font-weight:700;font-size:0.9rem;">Modelo 3D — Vista Estructural</span>
+        <span style="color:#8b949e;font-size:0.72rem;padding:2px 7px;background:#21262d;border-radius:3px;border:1px solid #30363d;">Solo visualización estética</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="color:#8b949e;font-size:0.72rem;">🖱 Arrastrar = rotar &nbsp;·&nbsp; Scroll = zoom &nbsp;·&nbsp; Clic derecho = desplazar</span>
+        <button id="btn-refresh-3d" style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:0.78rem;" title="Regenerar modelo">↺ Actualizar</button>
+        <button id="btn-close-3d" style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:0.78rem;">✕ Cerrar</button>
+      </div>
+    </div>
+    <div id="modal-3d-body" style="flex:1;display:flex;min-height:0;overflow:hidden;">
+      <div id="container-3d" style="flex:1;min-width:0;overflow:hidden;"></div>
+    </div>
+  </div>
+
+  <!-- Add-span mini form (hidden by default) -->
+  <div id="add-span-form" class="add-span-form hidden">
+    <div class="add-span-title">Nuevo Vano</div>
+    <div class="add-span-field">
+      <label>Longitud L <span>m</span></label>
+      <input type="number" id="new-span-L" value="4.0" step="0.5" min="0.5" max="20">
+    </div>
+    <div class="add-span-field">
+      <label>Tipo</label>
+      <select id="new-span-type">
+        <option value="muro">Muro Albañilería</option>
+        <option value="portico">Pórtico H.A.</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:8px;">
+      <button id="btn-add-span-ok" class="btn-primary" style="flex:1;padding:0.5rem;">Agregar</button>
+      <button id="btn-add-span-cancel" class="btn-secondary" style="flex:1;padding:0.5rem;">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- Canvas Filter Bar (bottom of canvas) -->
+  <div id="canvas-filter-bar">
+    <div class="cfb-group">
+      <span class="cfb-label">Capas</span>
+      <button class="cfb-toggle active" data-layer="loads"    title="Cargas distribuidas">
+        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20" stroke-linecap="round"/><path d="M2 7h20M2 17h20" opacity=".5" stroke-linecap="round"/></svg>
+        Cargas
+      </button>
+      <button class="cfb-toggle active" data-layer="dims"    title="Dimensiones/cotas">
+        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M2 12h20M2 6v12M22 6v12" stroke-linecap="round"/></svg>
+        Cotas
+      </button>
+      <button class="cfb-toggle active" data-layer="labels"  title="Etiquetas y resultados">
+        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2"/></svg>
+        Etiquetas
+      </button>
+      <button class="cfb-toggle active" data-layer="reactions" title="Reacciones en apoyos">
+        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 18l7 3 7-3" stroke-linecap="round"/></svg>
+        Apoyos
+      </button>
+    </div>
+
+    <div class="cfb-sep"></div>
+
+    <div class="cfb-group" id="diagram-filter-group">
+      <span class="cfb-label">Diagramas</span>
+      <button class="cfb-toggle active" data-type="moment"  title="Diagrama de momento flector">M — Flector</button>
+      <button class="cfb-toggle active" data-type="shear"   title="Diagrama de corte">V — Corte</button>
+      <button class="cfb-toggle active" data-type="axial"   title="Diagrama axial">N — Axial</button>
+    </div>
+
+    <div class="cfb-sep"></div>
+
+    <div class="cfb-group">
+      <button class="cfb-normalize active" id="chip-normalize" title="Normalizar escala de gráficas">
+        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21H3V3" stroke-linecap="round"/><path d="M6 18l4-8 4 6 3-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Normalizar
+      </button>
+    </div>
+  </div>
+
+  <!-- Legacy chips kept for JS compatibility (hidden) -->
+  <div id="diagram-chips" style="display:none">
+    <span class="chip active" data-type="moment">M — Flector</span>
+    <span class="chip active" data-type="shear">V — Corte</span>
+    <span class="chip active" data-type="axial">N — Axial</span>
+  </div>
+
+  <div id="canvas-area">
+    <svg id="structural-canvas" style="width:100%;height:100%;display:block;">
+      <defs>
+        <!-- Grid Patterns -->
+        <pattern id="grid-minor" width="10" height="10" patternUnits="userSpaceOnUse">
+          <path d="M10 0H0V10" fill="none" stroke="rgba(255,255,255,0.025)" stroke-width="0.5"/>
+        </pattern>
+        <pattern id="grid-major" width="50" height="50" patternUnits="userSpaceOnUse">
+          <rect width="50" height="50" fill="url(#grid-minor)"/>
+          <path d="M50 0H0V50" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+        </pattern>
+
+        <!-- Structural Element Gradients -->
+        <linearGradient id="grad-beam" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#3b4a5a;stop-opacity:1" />
+          <stop offset="50%" style="stop-color:#2b3a4a;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#1b2a3a;stop-opacity:1" />
+        </linearGradient>
+
+        <linearGradient id="grad-column" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#3a4a5a;stop-opacity:1" />
+          <stop offset="50%" style="stop-color:#2a3a4a;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#1a2a3a;stop-opacity:1" />
+        </linearGradient>
+
+        <radialGradient id="grad-foundation" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" style="stop-color:#2d3540;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#1d2530;stop-opacity:1" />
+        </radialGradient>
+
+        <!-- Arrow Markers -->
+        <marker id="arrow-warn" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L6,3 z" fill="#d29922"/>
+        </marker>
+        <marker id="arrow-accent" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L6,3 z" fill="#2f81f7"/>
+        </marker>
+        <marker id="arrow-success" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L6,3 z" fill="#3fb950"/>
+        </marker>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid-major)"/>
+
+      <!-- Rendered by JS — all layers wrapped for pan/zoom transform -->
+      <g id="transform-layer">
+        <g id="supports-layer"></g>
+        <g id="wall-layer"></g>
+        <g id="beams-layer"></g>
+        <g id="columns-layer"></g>
+        <g id="loads-layer"></g>
+        <g id="dims-layer"></g>
+        <g id="diagrams-layer"></g>
+        <g id="labels-layer"></g>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Status Bar -->
+  <div id="status-bar">
+    <span class="status-item"><span class="status-dot"></span> Sistema listo</span>
+    <span class="status-item" id="sb-selected">Sin selección</span>
+    <span class="status-item" id="sb-qu">q<sub>u</sub>: — kN/m</span>
+    <span class="status-item" id="sb-scale">Escala: 1m = 120px</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     OVERLAY — Vista Detalle del Elemento
+══════════════════════════════════════════ -->
+<div id="element-detail-overlay" class="el-detail-overlay hidden">
+  <div class="el-detail-header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span id="el-detail-badge" class="elem-badge">—</span>
+      <span id="el-detail-title" style="font-weight:600;font-size:0.9rem;">Elemento</span>
+    </div>
+    <button id="btn-detail-close" title="Cerrar (Esc)" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.4rem;padding:4px 8px;">×</button>
+  </div>
+  <div class="el-detail-body" style="display: flex; flex-direction: row; height: calc(100% - 40px); overflow: hidden;">
+    <!-- LEFT PANEL: Elements List -->
+    <div id="el-detail-left" style="width: 220px; flex: 0 0 auto; border-right: 1px solid var(--border-light); overflow-y: auto; padding: 1rem; background: var(--bg-card);">
+      <h3 style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem; text-transform:uppercase;">Elementos</h3>
+      <ul id="el-detail-list" style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.5rem;">
+        <!-- JS injected -->
+      </ul>
+    </div>
+    
+    <!-- MAIN CANVAS -->
+    <div style="flex: 1; display:flex; flex-direction:column; overflow: hidden;">
+      <svg id="el-detail-svg" style="width:100%;flex:1 1 60%;display:block;min-height:0;"></svg>
+      <div id="el-detail-info" style="flex:0 0 auto;overflow-y:auto;border-top:1px solid var(--border-light);padding:0.75rem 1rem;background:var(--bg-card); display:none;"></div>
+    </div>
+
+    <!-- RIGHT PANEL: Methodology -->
+    <div id="el-detail-right" style="width: 280px; flex: 0 0 auto; border-left: 1px solid var(--border-light); overflow-y: auto; padding: 1rem; background: var(--bg-card); font-size:0.8rem; line-height:1.5; color:var(--text-secondary);">
+      <h3 style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem; text-transform:uppercase;">Metodología NCh430</h3>
+      <div id="el-detail-methodology">
+        <!-- JS injected -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     OVERLAY — PLANOS GENERALES DE ARMADURA
+══════════════════════════════════════════ -->
+<div id="all-sections-overlay" class="el-detail-overlay hidden" style="z-index: 1500; background: rgba(10,12,16,0.95); backdrop-filter: blur(10px);">
+  <div class="el-detail-header" style="border-bottom: 1px solid var(--border);">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="elem-badge" style="background: rgba(47,129,247,0.15); color: #2f81f7; border-color: rgba(47,129,247,0.3);">PLANOS</span>
+      <span style="font-weight:600;font-size:0.95rem; color:#fff;">Cortes Transversales y Armaduras</span>
+    </div>
+    <button id="btn-all-sections-close" title="Cerrar (Esc)" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.4rem;padding:4px 8px;">×</button>
+  </div>
+  <div class="el-detail-body" style="padding: 20px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; height: calc(100% - 45px);">
+    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; position:relative;">
+      <h4 style="position:absolute; top:10px; left:15px; color:#2f81f7; font-size:0.85rem; margin:0; pointer-events:none;">Viga Superior (Cadena)</h4>
+      <svg id="svg-all-beam-top" style="width:100%;height:400px;display:block;"></svg>
+    </div>
+    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; position:relative;">
+      <h4 style="position:absolute; top:10px; left:15px; color:#8b5cf6; font-size:0.85rem; margin:0; pointer-events:none;">Sobrecimiento / Viga Inferior</h4>
+      <svg id="svg-all-beam-bot" style="width:100%;height:400px;display:block;"></svg>
+    </div>
+    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; position:relative;">
+      <h4 style="position:absolute; top:10px; left:15px; color:#3fb950; font-size:0.85rem; margin:0; pointer-events:none;">Pilar de Confinamiento</h4>
+      <svg id="svg-all-column" style="width:100%;height:400px;display:block;"></svg>
+    </div>
+    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; position:relative;">
+      <h4 style="position:absolute; top:10px; left:15px; color:#d29922; font-size:0.85rem; margin:0; pointer-events:none;">Zapata Corrida</h4>
+      <svg id="svg-all-foundation" style="width:100%;height:400px;display:block;"></svg>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MODAL — Rebar Editor
+══════════════════════════════════════════ -->
+<div id="modal-rebar-editor" class="modal hidden">
+  <div class="modal-overlay"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="modal-title">Editar Armadura</h2>
+      <button id="btn-modal-close" class="btn-close" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.5rem;">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="design-info" id="modal-design-info"></div>
+      <div id="modal-faces"></div>
+      <div id="modal-stirrups"></div>
+    </div>
+    <div class="modal-footer">
+      <button id="btn-modal-cancel" class="btn-secondary">Cancelar</button>
+      <button id="btn-modal-save" class="btn-primary">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     RIGHT PANEL — Element Properties & Results
+══════════════════════════════════════════ -->
+<div id="panel-right" class="hidden">
+  <div class="panel-header">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span id="el-badge" class="elem-badge">—</span>
+      <span id="el-name" style="font-weight:600;font-size:0.85rem;">Ningún elemento</span>
+    </div>
+    <button id="panel-close" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <div class="panel-body">
+
+    <!-- Properties Section -->
+    <div class="card">
+      <h3>Propiedades Geométricas</h3>
+      <div id="el-props-geo" class="result-grid"></div>
+    </div>
+
+    <div class="card">
+      <h3>Propiedades de Materiales</h3>
+      <div id="el-props-mat" class="result-grid"></div>
+    </div>
+
+    <!-- Internal Forces Section -->
+    <div class="card" id="forces-card">
+      <h3>Fuerzas Internas de Diseño</h3>
+      <div id="el-forces" class="result-grid"></div>
+    </div>
+
+    <!-- Reinforcement Section -->
+    <div class="card" id="rebar-card">
+      <h3>Armadura Requerida (NCh430)</h3>
+      <div id="rebar-content"></div>
+    </div>
+
+    <!-- Detail View button (hidden for wall) -->
+    <div id="detail-btn-card" class="card" style="padding:0.5rem;display:flex;flex-direction:column;gap:0.4rem;">
+      <button id="btn-open-detail" class="btn-detail-view">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        VISUALIZAR ELEMENTO
+      </button>
+      <button id="btn-open-memory" class="btn-detail-view" style="background:linear-gradient(135deg,rgba(80,160,255,0.18),rgba(80,120,255,0.10));border-color:rgba(80,160,255,0.35);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        MEMORIA DE CÁLCULO
+      </button>
+    </div>
+
+    <!-- Cross Section -->
+    <div class="card" id="cross-section-card">
+      <h3>Sección Transversal</h3>
+      <div id="cross-section-content"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Módulos -->
+<!-- Note: config.js is a server-side module (uses fs/path), loaded by app.js -->
+<script src="modules/state.js?v=4"></script>
+<script src="modules/geometry.js"></script>
+<script src="modules/solver.js?v=5"></script>
+<script src="modules/renderer/renderer.js"></script>
+<script src="modules/renderer/crossSection.js?v=2"></script>
+<script src="modules/renderer/elementDetail.js?v=5"></script>
+<script src="modules/ui/panels.js?v=4"></script>
+<script src="modules/ui/validators.js"></script>
+<script src="modules/storage/rebarStorage.js"></script>
+<script src="modules/ui/rebarEditor.js"></script>
+<script src="modules/renderer/memoryReport.js?v=2"></script>
+<script src="modules/renderer/memoryReport-enhanced.js"></script>
+<script src="modules/renderer/memoryReport-calc.js"></script>
+<script src="modules/renderer/lateralDCL.js"></script>
+<!-- PDF Generation Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- Three.js 3D (legacy, sin ES modules) -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="modules/renderer/view3d.js"></script>
+<!-- App principal -->
+<script src="app.js?v=5"></script>
+
+<!-- ═══════════════════════════════════════
+     IA CHAT WIDGET — Gemini API
+══════════════════════════════════════════ -->
+<div id="ai-chat-widget">
+  <div id="ai-chat-header">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.808 13.061l.707-.707M12 18a6 6 0 100-12 6 6 0 000 12z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Asesor Estructural IA</span>
+      <span id="ai-chat-status-dot" style="width:7px;height:7px;border-radius:50%;background:#ff6b6b;display:inline-block;" title="Sin API Key"></span>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button id="ai-chat-config-btn" title="Configurar API Key" style="background:rgba(255,255,255,0.15);border:none;color:white;cursor:pointer;padding:3px 8px;border-radius:3px;font-size:0.7rem;">⚙ API</button>
+      <button id="ai-chat-clear-btn" title="Limpiar conversación" style="background:rgba(255,255,255,0.15);border:none;color:white;cursor:pointer;padding:3px 8px;border-radius:3px;font-size:0.7rem;">🗑</button>
+      <button id="ai-chat-toggle-btn" style="background:rgba(255,255,255,0.15);border:none;color:white;cursor:pointer;padding:3px 8px;border-radius:3px;font-size:0.85rem;font-weight:700;">−</button>
+      <button id="ai-chat-close-btn" title="Cerrar Chat" style="background:rgba(255,255,255,0.15);border:none;color:white;cursor:pointer;padding:3px 8px;border-radius:3px;font-size:0.85rem;font-weight:700;">×</button>
+    </div>
+  </div>
+
+  <!-- Panel configuración API Key -->
+  <div id="ai-chat-config-panel" style="display:none;padding:10px 12px;background:rgba(0,0,0,0.3);border-bottom:1px solid rgba(88,166,255,0.2);">
+    <div style="font-size:0.7rem;color:rgba(255,255,255,0.6);margin-bottom:6px;">API Key de Google AI Studio</div>
+    <div style="display:flex;gap:6px;">
+      <input type="password" id="ai-api-key-input" placeholder="AIza..." style="flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(88,166,255,0.3);color:white;padding:5px 8px;border-radius:3px;font-size:0.75rem;outline:none;">
+      <button id="ai-api-key-save" style="background:#58a6ff;border:none;color:white;padding:5px 12px;border-radius:3px;cursor:pointer;font-size:0.75rem;font-weight:600;">Guardar</button>
+    </div>
+    <div style="margin-top:8px;">
+      <div style="font-size:0.7rem;color:rgba(255,255,255,0.6);margin-bottom:4px;">Modelo</div>
+      <select id="ai-model-select" style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(88,166,255,0.3);color:white;padding:5px 8px;border-radius:3px;font-size:0.75rem;outline:none;">
+        <option value="gemini-flash-latest">gemini-flash — Free tier ✓ (recomendado)</option>
+        <option value="gemini-pro-latest">gemini-pro — Free tier ✓ (más capaz, lento)</option>
+        <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite — Free tier ✓ (rápido)</option>
+      </select>
+    </div>
+    <div style="font-size:0.65rem;color:rgba(255,255,255,0.4);margin-top:5px;">La key y modelo se guardan en este navegador (localStorage)</div>
+  </div>
+
+  <div id="ai-chat-messages"></div>
+
+  <div id="ai-chat-footer">
+    <textarea id="ai-chat-input" placeholder="Pregunta sobre el diseño estructural... (Enter = enviar)" rows="2"></textarea>
+    <button id="ai-chat-send-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+
+<script src="modules/ai-chat.js?v=2"></script>
+</body>
+</html>
