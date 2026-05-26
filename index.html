@@ -78,10 +78,6 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.808 13.061l.707-.707M12 18a6 6 0 100-12 6 6 0 000 12z" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Asesor IA
     </button>
-    <button class="tab-btn" data-tab="compositor" id="tab-compositor" style="background:rgba(63,185,80,0.08);border-bottom:2px solid transparent;" title="Compositor interactivo — dibuja y reconoce estructuras">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-      Compositor
-    </button>
   </div>
 
   <div class="sidebar-body">
@@ -553,65 +549,6 @@
         </div>
       </div>
     </div>
-    <!-- TAB: COMPOSITOR -->
-    <div id="tab-content-compositor" style="display:none">
-
-      <!-- Paleta de elementos -->
-      <div class="card">
-        <h3 style="margin-bottom:8px;">Colocar elemento</h3>
-        <p style="font-size:0.67rem;color:var(--text-muted);margin-bottom:10px;line-height:1.4;">
-          Selecciona un elemento, luego haz <strong>2 clicks</strong> en el canvas para colocarlo.<br>
-          Los elementos se conectan automáticamente al coincidir puntos (snap 10 cm).
-        </p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-          <button class="composer-tool-btn" data-tool="column" title="Pilar vertical — click base, click coronación" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;background:rgba(47,129,247,0.10);border:1px solid rgba(47,129,247,0.30);border-radius:6px;color:#58a6ff;cursor:pointer;font-size:0.7rem;font-weight:600;transition:all 0.12s;">
-            <svg width="22" height="28" viewBox="0 0 22 28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="2" width="8" height="24" rx="1" fill="rgba(47,129,247,0.22)" stroke="#2f81f7" stroke-width="1.5"/><line x1="9" y1="5" x2="13" y2="9" stroke="#2f81f7" stroke-width="0.7" opacity="0.5"/><line x1="9" y1="9" x2="13" y2="13" stroke="#2f81f7" stroke-width="0.7" opacity="0.5"/><line x1="9" y1="13" x2="13" y2="17" stroke="#2f81f7" stroke-width="0.7" opacity="0.5"/><line x1="9" y1="17" x2="13" y2="21" stroke="#2f81f7" stroke-width="0.7" opacity="0.5"/></svg>
-            Pilar
-          </button>
-          <button class="composer-tool-btn" data-tool="beam" title="Cadena/Viga — click izquierdo, click derecho" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;background:rgba(63,185,80,0.10);border:1px solid rgba(63,185,80,0.30);border-radius:6px;color:#3fb950;cursor:pointer;font-size:0.7rem;font-weight:600;transition:all 0.12s;">
-            <svg width="28" height="14" viewBox="0 0 28 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="24" height="6" rx="1" fill="rgba(63,185,80,0.22)" stroke="#3fb950" stroke-width="1.5"/><line x1="5" y1="6" x2="8" y2="9" stroke="#3fb950" stroke-width="0.7" opacity="0.5"/><line x1="10" y1="6" x2="13" y2="9" stroke="#3fb950" stroke-width="0.7" opacity="0.5"/><line x1="15" y1="6" x2="18" y2="9" stroke="#3fb950" stroke-width="0.7" opacity="0.5"/></svg>
-            Cadena
-          </button>
-          <button class="composer-tool-btn" data-tool="wall-panel" title="Panel de muro — click esquina inf-izq, click esquina sup-der" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;background:rgba(210,153,34,0.10);border:1px solid rgba(210,153,34,0.30);border-radius:6px;color:#d29922;cursor:pointer;font-size:0.7rem;font-weight:600;transition:all 0.12s;">
-            <svg width="24" height="26" viewBox="0 0 24 26" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="20" height="22" rx="1" fill="rgba(210,153,34,0.18)" stroke="#d29922" stroke-width="1.5"/><line x1="2" y1="8" x2="22" y2="8" stroke="#d29922" stroke-width="0.7" opacity="0.5"/><line x1="2" y1="14" x2="22" y2="14" stroke="#d29922" stroke-width="0.7" opacity="0.5"/><line x1="2" y1="20" x2="22" y2="20" stroke="#d29922" stroke-width="0.7" opacity="0.5"/><line x1="12" y1="2" x2="12" y2="8" stroke="#d29922" stroke-width="0.7" opacity="0.5"/><line x1="7" y1="8" x2="7" y2="14" stroke="#d29922" stroke-width="0.7" opacity="0.5"/><line x1="17" y1="14" x2="17" y2="20" stroke="#d29922" stroke-width="0.7" opacity="0.5"/></svg>
-            Muro
-          </button>
-          <button class="composer-tool-btn" data-tool="footing" title="Zapata — click en punto central de base de columna" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;background:rgba(139,92,246,0.10);border:1px solid rgba(139,92,246,0.30);border-radius:6px;color:#8b5cf6;cursor:pointer;font-size:0.7rem;font-weight:600;transition:all 0.12s;">
-            <svg width="28" height="14" viewBox="0 0 28 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="24" height="8" rx="1" fill="rgba(139,92,246,0.22)" stroke="#8b5cf6" stroke-width="1.5"/><line x1="5" y1="7" x2="8" y2="10" stroke="#8b5cf6" stroke-width="0.7" opacity="0.5"/><line x1="11" y1="7" x2="14" y2="10" stroke="#8b5cf6" stroke-width="0.7" opacity="0.5"/><line x1="17" y1="7" x2="20" y2="10" stroke="#8b5cf6" stroke-width="0.7" opacity="0.5"/></svg>
-            Zapata
-          </button>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:8px;">
-          <button id="composer-undo-btn" style="flex:1;padding:5px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:4px;color:var(--text-secondary);cursor:pointer;font-size:0.72rem;" title="Deshacer último elemento (Ctrl+Z)">↩ Deshacer</button>
-          <button id="composer-clear-btn" style="flex:1;padding:5px;background:rgba(255,60,60,0.08);border:1px solid rgba(255,60,60,0.25);border-radius:4px;color:#f85149;cursor:pointer;font-size:0.72rem;" title="Limpiar todo">🗑 Limpiar</button>
-        </div>
-        <p style="margin-top:8px;font-size:0.65rem;color:var(--text-muted);">
-          <strong>Tip:</strong> Escape = cancelar · Ctrl+Z = deshacer · doble-click = reset vista
-        </p>
-      </div>
-
-      <!-- Badge de reconocimiento -->
-      <div class="card">
-        <h3 style="margin-bottom:8px;">Estructura reconocida</h3>
-        <div id="composer-recognition-badge" style="min-height:36px;padding:4px 0;">
-          <span style="color:rgba(255,255,255,0.35);font-size:0.72rem;">Sin estructura reconocida aún</span>
-        </div>
-      </div>
-
-      <!-- Propiedades rápidas del elemento activo -->
-      <div class="card" id="composer-props-card" style="display:none">
-        <h3 style="margin-bottom:8px;">Propiedades del elemento</h3>
-        <div id="composer-props-content"></div>
-      </div>
-
-      <!-- Botón Calcular -->
-      <button id="composer-calc-btn" disabled
-        style="width:100%;margin-top:8px;padding:10px;background:linear-gradient(135deg,rgba(63,185,80,0.25),rgba(47,129,247,0.18));border:1px solid rgba(63,185,80,0.45);border-radius:6px;color:#56d364;font-size:0.82rem;font-weight:700;cursor:pointer;transition:all 0.15s;"
-        title="Convertir estructura a modelo S y ejecutar el solver">
-        ⚡ Calcular estructura →
-      </button>
-    </div><!-- /tab-content-compositor -->
-
   </div>
 
   <button id="solve-btn">
@@ -816,9 +753,6 @@
         <g id="dims-layer"></g>
         <g id="diagrams-layer"></g>
         <g id="labels-layer"></g>
-        <!-- Compositor layers (rendered only when composer.active=true) -->
-        <g id="composer-layer"></g>
-        <g id="composer-ghost-layer"></g>
       </g>
     </svg>
   </div>
@@ -1001,12 +935,6 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="modules/renderer/view3d.js"></script>
-<!-- Compositor Interactivo -->
-<script src="modules/composer/state.js"></script>
-<script src="modules/composer/engine.js"></script>
-<script src="modules/composer/renderer.js"></script>
-<script src="modules/composer/recognizer.js"></script>
-<script src="modules/composer/bridge.js"></script>
 <!-- App principal -->
 <script src="app.js?v=5"></script>
 

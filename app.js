@@ -852,27 +852,16 @@ const Controller = {
   },
 
   bindTabs() {
-    const ALL_TABS = ['config', 'geometry', 'loads', 'materials', 'foundation', 'ai-advisor', 'compositor'];
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        ALL_TABS.forEach(t => {
+        ['geometry', 'loads', 'materials', 'foundation', 'ai-advisor'].forEach(t => {
           const el = document.getElementById(`tab-content-${t}`);
           if (el) el.style.display = 'none';
         });
         btn.classList.add('active');
         const activeContent = document.getElementById(`tab-content-${btn.dataset.tab}`);
         if (activeContent) activeContent.style.display = '';
-
-        // Activar/desactivar modo compositor según tab seleccionado
-        const isCompositor = btn.dataset.tab === 'compositor';
-        if (typeof S !== 'undefined' && S.composer) {
-          S.composer.active = isCompositor;
-          if (typeof ComposerRenderer !== 'undefined') ComposerRenderer.draw();
-          if (!isCompositor && typeof ComposerEngine !== 'undefined') ComposerEngine.clearTool();
-          btn.style.borderBottomColor = isCompositor ? '#3fb950' : '';
-          btn.style.color = isCompositor ? '#56d364' : '';
-        }
       });
     });
   },
@@ -1626,51 +1615,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ── Compositor Interactivo ─────────────────────────────────
-  ComposerEngine.bind();
-
-  // Paleta: botones de herramientas
-  document.querySelectorAll('.composer-tool-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tool = btn.dataset.tool;
-      if (CS.activeTool === tool) {
-        // Toggle off
-        ComposerEngine.setTool(null);
-      } else {
-        ComposerEngine.setTool(tool);
-      }
-    });
-  });
-
-  // Estilos activos para botones de paleta
-  const originalSetTool = ComposerEngine.setTool.bind(ComposerEngine);
-  ComposerEngine.setTool = function(type) {
-    originalSetTool(type);
-    document.querySelectorAll('.composer-tool-btn').forEach(btn => {
-      const isActive = btn.dataset.tool === type;
-      btn.style.opacity = type && !isActive ? '0.5' : '1';
-      btn.style.transform = isActive ? 'scale(1.04)' : '';
-      btn.style.boxShadow = isActive ? '0 0 0 2px currentColor' : '';
-    });
-  };
-
-  // Botón Deshacer
-  document.getElementById('composer-undo-btn')?.addEventListener('click', () => {
-    csUndoLast();
-    ComposerRecognizer.analyze();
-    ComposerRenderer.draw();
-  });
-
-  // Botón Limpiar
-  document.getElementById('composer-clear-btn')?.addEventListener('click', () => {
-    if (confirm('¿Limpiar todos los elementos del compositor?')) {
-      resetCS();
-      ComposerRenderer.draw();
-    }
-  });
-
-  // Botón Calcular
-  document.getElementById('composer-calc-btn')?.addEventListener('click', () => {
-    ComposerBridge.activate();
-  });
 });
