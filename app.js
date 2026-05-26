@@ -443,6 +443,36 @@ const Controller = {
     }
     this.updateCriticalCaseDisplay();
     if (S.ui?.selectedEl) UI.selectElement(S.ui.selectedEl, S.ui.selectedSpan, S.ui.selectedNode);
+    
+    // Auto-save state to localStorage for generic CAD exporter
+    try {
+      if (typeof S !== 'undefined') {
+        const pilar_b = (S.elements && S.elements.column && S.elements.column.section) ? S.elements.column.section.b : 0.20;
+        const pilar_h = (S.elements && S.elements.column && S.elements.column.section) ? S.elements.column.section.h : 0.25;
+        const cadena_sup_h = (S.elements && S.elements.beam_top && S.elements.beam_top.section) ? S.elements.beam_top.section.h : 0.15;
+        const sobrecimiento_h = (S.elements && S.elements.beam_bot && S.elements.beam_bot.section) ? S.elements.beam_bot.section.h : 0.60;
+        const sobrecimiento_b = (S.elements && S.elements.beam_bot && S.elements.beam_bot.section) ? S.elements.beam_bot.section.b : 0.20;
+        
+        const stateToSave = {
+          H_muro: S.geometry ? S.geometry.H : 2.50,
+          L_total: S.geometry && S.spans ? S.geometry.L * S.spans.length : 17.28,
+          t_muro: S.geometry ? S.geometry.tw : 0.14,
+          pilar_b: pilar_b,
+          pilar_h: pilar_h,
+          pilar_s: S.geometry ? S.geometry.L : 2.88,
+          cadena_sup_h: cadena_sup_h,
+          sobrecimiento_h: sobrecimiento_h,
+          sobrecimiento_b: sobrecimiento_b,
+          B_zapata: S.foundation ? S.foundation.B : 0.80,
+          H_zapata: S.foundation ? S.foundation.Hf : 0.60,
+          D_fundacion: S.foundation ? S.foundation.Df : 0.85,
+          tipo_zapata: S.foundation ? S.foundation.type : 'L'
+        };
+        localStorage.setItem('ADOSAMIENTO_PROJECT_STATE', JSON.stringify(stateToSave));
+      }
+    } catch(err) {
+      console.error("Error auto-guardando estado para CAD:", err);
+    }
   },
 
   updateLateralDisplays() {
@@ -822,16 +852,27 @@ const Controller = {
   },
 
   bindTabs() {
+    const ALL_TABS = ['config', 'geometry', 'loads', 'materials', 'foundation', 'ai-advisor', 'compositor'];
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        ['geometry', 'loads', 'materials', 'foundation', 'ai-advisor'].forEach(t => {
+        ALL_TABS.forEach(t => {
           const el = document.getElementById(`tab-content-${t}`);
           if (el) el.style.display = 'none';
         });
         btn.classList.add('active');
         const activeContent = document.getElementById(`tab-content-${btn.dataset.tab}`);
         if (activeContent) activeContent.style.display = '';
+
+        // Activar/desactivar modo compositor según tab seleccionado
+        const isCompositor = btn.dataset.tab === 'compositor';
+        if (typeof S !== 'undefined' && S.composer) {
+          S.composer.active = isCompositor;
+          if (typeof ComposerRenderer !== 'undefined') ComposerRenderer.draw();
+          if (!isCompositor && typeof ComposerEngine !== 'undefined') ComposerEngine.clearTool();
+          btn.style.borderBottomColor = isCompositor ? '#3fb950' : '';
+          btn.style.color = isCompositor ? '#56d364' : '';
+        }
       });
     });
   },
@@ -1583,5 +1624,53 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape' && modal3d && modal3d.style.display !== 'none') {
       modal3d.style.display = 'none';
     }
+  });
+
+  // ── Compositor Interactivo ─────────────────────────────────
+  ComposerEngine.bind();
+
+  // Paleta: botones de herramientas
+  document.querySelectorAll('.composer-tool-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tool = btn.dataset.tool;
+      if (CS.activeTool === tool) {
+        // Toggle off
+        ComposerEngine.setTool(null);
+      } else {
+        ComposerEngine.setTool(tool);
+      }
+    });
+  });
+
+  // Estilos activos para botones de paleta
+  const originalSetTool = ComposerEngine.setTool.bind(ComposerEngine);
+  ComposerEngine.setTool = function(type) {
+    originalSetTool(type);
+    document.querySelectorAll('.composer-tool-btn').forEach(btn => {
+      const isActive = btn.dataset.tool === type;
+      btn.style.opacity = type && !isActive ? '0.5' : '1';
+      btn.style.transform = isActive ? 'scale(1.04)' : '';
+      btn.style.boxShadow = isActive ? '0 0 0 2px currentColor' : '';
+    });
+  };
+
+  // Botón Deshacer
+  document.getElementById('composer-undo-btn')?.addEventListener('click', () => {
+    csUndoLast();
+    ComposerRecognizer.analyze();
+    ComposerRenderer.draw();
+  });
+
+  // Botón Limpiar
+  document.getElementById('composer-clear-btn')?.addEventListener('click', () => {
+    if (confirm('¿Limpiar todos los elementos del compositor?')) {
+      resetCS();
+      ComposerRenderer.draw();
+    }
+  });
+
+  // Botón Calcular
+  document.getElementById('composer-calc-btn')?.addEventListener('click', () => {
+    ComposerBridge.activate();
   });
 });

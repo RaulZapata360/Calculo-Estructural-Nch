@@ -176,6 +176,11 @@ function initState() {
       view: { x: 0, y: 0, zoom: 1 }
     },
 
+    // ── Módulo Compositor ───────────────────────────────────────
+    composer: {
+      active: false,   // true cuando el tab Compositor está abierto
+    },
+
     diagrams: { moment: false, shear: false, axial: false, normalize: true }
   };
 }

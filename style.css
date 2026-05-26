@@ -1669,3 +1669,41 @@ input:focus, select:focus { outline: none; border-color: var(--accent); box-shad
     display: none !important;
   }
 }
+
+/* ═══════════════════════════════════════
+   COMPOSITOR INTERACTIVO
+═══════════════════════════════════════ */
+
+/* Tab Compositor — resaltar con verde */
+#tab-compositor { border-bottom: 2px solid transparent; transition: border-color 0.2s; }
+#tab-compositor:hover { color: #56d364 !important; }
+#tab-compositor.active-composer { border-bottom-color: #3fb950 !important; color: #56d364 !important; }
+
+/* Botones de paleta */
+.composer-tool-btn {
+  transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
+  user-select: none;
+}
+.composer-tool-btn:hover {
+  opacity: 1 !important;
+  filter: brightness(1.15);
+}
+.composer-tool-btn.active {
+  box-shadow: 0 0 0 2px currentColor;
+  transform: scale(1.04);
+}
+
+/* Badge de reconocimiento en compositor */
+#composer-recognition-badge {
+  transition: all 0.3s;
+}
+
+/* Botón Calcular deshabilitado */
+#composer-calc-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+#composer-calc-btn:not(:disabled):hover {
+  background: linear-gradient(135deg,rgba(63,185,80,0.40),rgba(47,129,247,0.28)) !important;
+  color: #7ee787 !important;
+}
