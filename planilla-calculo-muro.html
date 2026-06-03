@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planilla de Cálculo — Muro de Contención | EstructuraCalc</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --border:    rgba(48,54,61,0.9);
+      --accent:    #2f81f7;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --ok:        #3fb950;
+      --warn:      #d29922;
+      --danger:    #f85149;
+      --row-input: rgba(47,129,247,0.05);
+      --row-calc:  rgba(255,255,255,0.015);
+      --row-sub:   rgba(255,255,255,0.04);
+    }
+
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ──────────────────────────────────────────── */
+    #hdr {
+      display: flex; align-items: center; gap: 14px;
+      padding: 9px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #hdr .logo { display:flex; align-items:center; gap:8px; }
+    #hdr .logo h1 { font-size:0.88rem; font-weight:700; }
+    #hdr .logo p  { font-size:0.65rem; color:var(--muted); }
+    #hdr .breadcrumb {
+      font-size: 0.72rem; color: var(--muted);
+      display: flex; align-items: center; gap: 6px;
+    }
+    #hdr .breadcrumb a { color: var(--accent); text-decoration: none; }
+    #hdr .breadcrumb a:hover { text-decoration: underline; }
+    #hdr .spacer { flex: 1; }
+    #hdr .nav-select {
+      font-size: 0.74rem; color: var(--text); background: var(--surface);
+      padding: 5px 11px; border-radius: 5px; border: 1px solid var(--border);
+      outline: none; cursor: pointer; font-family: inherit;
+    }
+    #hdr .badge-sheet {
+      font-size: 0.68rem; font-weight: 600; color: #e6edf3;
+      background: rgba(47,129,247,0.2); border: 1px solid rgba(47,129,247,0.4);
+      padding: 3px 10px; border-radius: 12px;
+    }
+
+    /* ── APP LAYOUT ──────────────────────────────────────── */
+    #app {
+      display: flex; flex: 1; overflow: hidden;
+    }
+
+    /* ── SECTION NAV (left) ──────────────────────────────── */
+    #section-nav {
+      width: 190px; flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      overflow-y: auto; padding: 10px 8px;
+      gap: 3px;
+    }
+    .nav-label {
+      font-size: 0.60rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      padding: 8px 6px 4px;
+    }
+    .nav-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; border-radius: 6px;
+      background: transparent; border: none;
+      color: var(--muted); font-family: inherit;
+      font-size: 0.74rem; cursor: pointer;
+      text-align: left; transition: all 0.12s;
+      border-left: 3px solid transparent;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+    .nav-btn.active {
+      background: rgba(47,129,247,0.10);
+      color: var(--text);
+      border-left-color: var(--sec-color, var(--accent));
+    }
+    .nav-num {
+      font-size: 0.85rem; min-width: 20px;
+    }
+    .nav-title { font-weight: 500; }
+
+    /* ── SHEET WRAPPER (right) ───────────────────────────── */
+    #sheet-wrapper {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+    }
+    #sheet-header {
+      padding: 14px 20px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    #sheet-header h2 {
+      font-size: 0.92rem; font-weight: 700;
+      color: var(--sec-color-hdr, var(--accent));
+      margin-bottom: 3px;
+    }
+    #sheet-header p {
+      font-size: 0.72rem; color: var(--muted);
+    }
+    #sheet-scroll {
+      flex: 1; overflow-y: auto; padding: 16px 20px;
+    }
+
+    /* ── SPREADSHEET TABLE ───────────────────────────────── */
+    .sheet-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.76rem;
+    }
+    .sheet-table thead th {
+      padding: 7px 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      font-size: 0.65rem; font-weight: 700;
+      color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .col-sym   { width: 90px; }
+    .col-desc  { }
+    .col-val   { width: 130px; text-align: right; }
+    .col-unit  { width: 60px; text-align: left; }
+    .col-state { width: 60px; text-align: center; }
+
+    /* Row types */
+    .row-sub td {
+      padding: 10px 8px 4px;
+      background: var(--row-sub);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.66rem; font-weight: 700;
+      color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .row-input td {
+      padding: 6px 8px;
+      background: var(--row-input);
+      border-left: 3px solid rgba(47,129,247,0.4);
+      border-bottom: 1px solid rgba(48,54,61,0.4);
+    }
+    .row-calc td {
+      padding: 6px 8px;
+      background: var(--row-calc);
+      border-bottom: 1px solid rgba(48,54,61,0.3);
+    }
+    .row-formula td {
+      padding: 2px 8px 6px;
+      background: transparent;
+      border-bottom: 1px solid rgba(48,54,61,0.3);
+    }
+    .row-bool td {
+      padding: 6px 8px;
+      background: var(--row-calc);
+      border-bottom: 1px solid rgba(48,54,61,0.4);
+    }
+
+    /* Columns */
+    .col-sym code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text);
+    }
+    .col-desc { color: var(--text); }
+    .col-unit { color: var(--muted); font-size: 0.68rem; padding-left: 6px !important; }
+
+    /* Input cell */
+    .cell-input {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(47,129,247,0.35);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      padding: 4px 8px;
+      text-align: right;
+      outline: none;
+      transition: border-color 0.1s, background 0.1s;
+    }
+    .cell-input:focus {
+      border-color: var(--accent);
+      background: rgba(47,129,247,0.12);
+      box-shadow: 0 0 0 2px rgba(47,129,247,0.2);
+    }
+
+    /* Output cell */
+    .cell-output {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+      display: block;
+      text-align: right;
+    }
+    .cell-output.val-ok     { color: var(--ok); }
+    .cell-output.val-warn   { color: var(--warn); }
+    .cell-output.val-danger { color: var(--danger); }
+
+    /* Formula text */
+    .formula-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.64rem;
+      color: rgba(139,148,158,0.75);
+      padding-left: 12px !important;
+    }
+
+    /* Status tags */
+    .tag-input {
+      font-size: 0.60rem; font-weight: 700;
+      color: rgba(47,129,247,0.8);
+      letter-spacing: 0.03em;
+    }
+    .tag-calc {
+      font-size: 0.60rem; font-weight: 700;
+      color: rgba(139,148,158,0.6);
+    }
+
+    /* Bool badges */
+    .col-bool-result { padding: 6px 8px !important; }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 5px;
+      font-size: 0.72rem; font-weight: 600;
+    }
+    .badge-ok     { background: rgba(63,185,80,0.15);  color: var(--ok);     border: 1px solid rgba(63,185,80,0.3); }
+    .badge-warn   { background: rgba(210,153,34,0.15); color: var(--warn);   border: 1px solid rgba(210,153,34,0.3); }
+    .badge-danger { background: rgba(248,81,73,0.15);  color: var(--danger); border: 1px solid rgba(248,81,73,0.3); }
+
+    /* ── KPI BAR (bottom) ────────────────────────────────── */
+    #kpi-bar {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 9px 20px;
+      display: flex; gap: 20px; align-items: center;
+      flex-wrap: wrap; flex-shrink: 0;
+    }
+    .kpi-item { display: flex; flex-direction: column; gap: 2px; min-width: 90px; }
+    .kpi-lbl  { font-size: 0.62rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .kpi-val  { font-size: 0.88rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--text); }
+    .kpi-val.val-ok     { color: var(--ok); }
+    .kpi-val.val-warn   { color: var(--warn); }
+    .kpi-val.val-danger { color: var(--danger); }
+    .kpi-sep  { width: 1px; height: 36px; background: var(--border); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(139,148,158,0.3); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header id="hdr">
+  <div class="logo">
+    <svg width="18" height="18" fill="none" stroke="var(--accent)" stroke-width="2" viewBox="0 0 24 24">
+      <path d="M3 20h18M3 20V7l9-4 9 4v13M9 20v-5h6v5"/>
+    </svg>
+    <div>
+      <h1>EstructuraCalc</h1>
+      <p>Muro de Contención · NCh3171 · NCh430</p>
+    </div>
+  </div>
+  <div class="breadcrumb">
+    <a href="muro-contencion.html">← Calculadora y Planos</a>
+    <span>/</span>
+    <span>Planilla de Cálculo</span>
+  </div>
+  <span class="badge-sheet">📊 Planilla Interactiva</span>
+  <div class="spacer"></div>
+  <select class="nav-select" onchange="if(this.value) window.location.href=this.value">
+    <optgroup label="Hormigón Armado (Cantiléver)">
+      <option value="muro-contencion.html">Calculadora y Planos</option>
+      <option value="planilla-calculo-muro.html" selected>📊 Planilla de Cálculo</option>
+    </optgroup>
+    <option value="muro-albanileria.html">Versión: Albañilería Confinada</option>
+    <option value="index.html">Volver a Adosamiento</option>
+  </select>
+</header>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- SECTION NAV -->
+  <nav id="section-nav">
+    <div class="nav-label">Secciones de Cálculo</div>
+    <!-- Se genera por JS -->
+  </nav>
+
+  <!-- SHEET WRAPPER -->
+  <div id="sheet-wrapper">
+    <div id="sheet-header">
+      <h2 id="sec-title">—</h2>
+      <p id="sec-desc">—</p>
+    </div>
+    <div id="sheet-scroll">
+      <table class="sheet-table">
+        <thead>
+          <tr>
+            <th class="col-sym">Símbolo</th>
+            <th class="col-desc">Descripción</th>
+            <th class="col-val">Valor</th>
+            <th class="col-unit">Unidad</th>
+            <th class="col-state">Tipo</th>
+          </tr>
+        </thead>
+        <tbody id="sheet-body">
+          <!-- Se genera por JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- KPI BAR -->
+<div id="kpi-bar">
+  <div class="kpi-item">
+    <span class="kpi-lbl">Ka activo</span>
+    <span class="kpi-val" id="kpi-ka">—</span>
+  </div>
+  <div class="kpi-item">
+    <span class="kpi-lbl">Pa (kN/m)</span>
+    <span class="kpi-val" id="kpi-pa">—</span>
+  </div>
+  <div class="kpi-sep"></div>
+  <div class="kpi-item">
+    <span class="kpi-lbl">FS Volcamiento</span>
+    <span class="kpi-val" id="kpi-fsv">—</span>
+  </div>
+  <div class="kpi-item">
+    <span class="kpi-lbl">FS Deslizamiento</span>
+    <span class="kpi-val" id="kpi-fsd">—</span>
+  </div>
+  <div class="kpi-sep"></div>
+  <div class="kpi-item">
+    <span class="kpi-lbl">q máx / q adm (kPa)</span>
+    <span class="kpi-val" id="kpi-q">—</span>
+  </div>
+  <div class="kpi-sep"></div>
+  <div class="kpi-item">
+    <span class="kpi-lbl">As pantalla (cm²/m)</span>
+    <span class="kpi-val" id="kpi-as">—</span>
+  </div>
+</div>
+
+<script src="modules/retencion/state.js"></script>
+<script src="modules/retencion/solver.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════
+// SECTION DEFINITIONS
+// ══════════════════════════════════════════════════════════════
+//  type: 'sub'   → subheader row
+//  type: 'inp'   → editable input
+//  type: 'calc'  → calculated output
+//  type: 'bool'  → boolean check (OK/FAIL)
+//  type: 'nucleus' → nucleus check (special)
+//  type: 'qcheck'  → q_max vs q_adm check
+
+const SECTIONS = [
+  {
+    id: 'geo', num: '①', title: '① Geometría',
+    color: '#58a6ff',
+    desc: 'Dimensiones físicas de la pantalla y la zapata corrida',
+    rows: [
+      { type:'sub', label:'Pantalla (Muro)' },
+      { type:'inp', sym:'H_libre', label:'Altura libre (coronación)',
+        grp:'geometry', key:'H_libre', unit:'m', min:0.5, max:8, step:0.05,
+        note:'Desde N.T.N. hasta la cima del muro · Rango típico: 0.5–5 m' },
+      { type:'inp', sym:'H_emp', label:'Empotramiento (frente del muro)',
+        grp:'geometry', key:'H_emp', unit:'m', min:0.1, max:3, step:0.05,
+        note:'Profundidad desde N.T.N. (lado libre) hasta la base de la zapata' },
+      { type:'inp', sym:'t', label:'Espesor de pantalla',
+        grp:'geometry', key:'t_muro', unit:'m', min:0.12, max:1, step:0.02,
+        note:'NCh430 §14.3: espesor mínimo 150 mm para muros estructurales' },
+      { type:'inp', sym:'L', label:'Longitud del muro',
+        grp:'geometry', key:'L', unit:'m', min:0.5, max:100, step:0.5,
+        note:'Para armadura longitudinal y espaciado de barbacanas Ø75@150 cm' },
+      { type:'sub', label:'Zapata Corrida' },
+      { type:'inp', sym:'B', label:'Ancho total de zapata',
+        grp:'geometry', key:'B_zap', unit:'m', min:0.3, max:6, step:0.05,
+        note:'Regla práctica: B ≈ 0.5–0.7 × H_total · Verificar con FS volcamiento ≥ 1.5' },
+      { type:'inp', sym:'Hf', label:'Altura de zapata',
+        grp:'geometry', key:'Hf', unit:'m', min:0.15, max:0.8, step:0.05,
+        note:'NCh430 §15.7: Hf ≥ 0.25 m para zapata continua' },
+      { type:'inp', sym:'B_toe', label:'Pie (proyección delantera)',
+        grp:'geometry', key:'B_toe', unit:'m', min:0, max:3, step:0.05,
+        note:'Proyección hacia el lado libre · 0 = muro en L sin pie' },
+      { type:'sub', label:'Valores Derivados' },
+      { type:'calc', sym:'B_talón', label:'Talón (proyección trasera)',
+        res:'B_talon', unit:'m', dec:3, formula:'B − B_toe − t' },
+      { type:'calc', sym:'H_stem', label:'Altura de pantalla (diseño estructural)',
+        res:'H_stem', unit:'m', dec:3, formula:'H_libre + H_emp' },
+      { type:'calc', sym:'H', label:'Altura total retenida',
+        res:'H_total', unit:'m', dec:3, formula:'H_stem + Hf  — NCh 02 §1.1: H incluye la zapata' },
+    ]
+  },
+  {
+    id:'rankine', num:'②', title:'② Coef. Rankine',
+    color:'#d29922',
+    desc:'Parámetros del suelo retenido y coeficientes de presión lateral',
+    rows:[
+      { type:'sub', label:'Propiedades del Suelo Retenido (Relleno)' },
+      { type:'inp', sym:'γ', label:'Peso unitario del relleno',
+        grp:'soil', key:'gamma', unit:'kN/m³', min:14, max:22, step:0.5,
+        note:'Grava GP: 18–21 kN/m³ · Arena suelta: 15–18 · Arena compacta: 17–20' },
+      { type:'inp', sym:'φ', label:'Ángulo de fricción interna',
+        grp:'soil', key:'phi', unit:'°', min:20, max:45, step:1,
+        note:'Grava GP/GW: 32–38° · Arena compacta: 30–36° · Requiere ensayo in situ' },
+      { type:'inp', sym:'c', label:'Cohesión del suelo retenido',
+        grp:'soil', key:'c', unit:'kPa', min:0, max:50, step:1,
+        note:'Rankine puro → c = 0 (granular drenado) · Conservador para diseño final' },
+      { type:'inp', sym:'N.F.', label:'Profundidad del nivel freático',
+        grp:'soil', key:'NF', unit:'m', min:0, max:20, step:0.1,
+        note:'Grava GP drena → N.F. profundo · Colocar barbacanas PVC Ø75 si N.F. sube' },
+      { type:'sub', label:'Coeficientes Calculados (Rankine, c=0, δ=0)' },
+      { type:'calc', sym:'Ka', label:'Coeficiente de empuje activo',
+        res:'Ka', unit:'—', dec:4, formula:'tan²(45° − φ/2)' },
+      { type:'calc', sym:'Kp', label:'Coeficiente de empuje pasivo (referencial)',
+        res:'Kp', unit:'—', dec:4, formula:'tan²(45° + φ/2)  — Pp = 0 en FS_des (NCh 02 §3.2)' },
+      { type:'calc', sym:'μ', label:'Rozamiento base zapata–suelo',
+        res:'μ', unit:'—', dec:4, formula:'tan(⅔·φ)  — NCh3171: fricción hormigón–suelo granular' },
+    ]
+  },
+  {
+    id:'pa', num:'③', title:'③ Empuje Activo',
+    color:'#f8a030',
+    desc:'Diagrama de presión activa de Rankine y momento de volcamiento',
+    rows:[
+      { type:'sub', label:'Sobrecarga en la Coronación del Relleno' },
+      { type:'inp', sym:'q', label:'Sobrecarga distribuida uniforme',
+        grp:'loads', key:'qSobrecarga', unit:'kPa', min:0, max:100, step:1,
+        note:'Sin carga: 0 kPa · Tráfico liviano: 5–10 · Camiones: 10–20 · Almacenamiento: 10–30' },
+      { type:'sub', label:'Distribución de Presión Activa σa(z) = Ka·γ·z + Ka·q' },
+      { type:'calc', sym:'σa(0)', label:'Presión activa en superficie (z = 0)',
+        res:'σa_sup', unit:'kPa', dec:2, formula:'Ka · q' },
+      { type:'calc', sym:'σa(H)', label:'Presión activa en base de zapata (z = H)',
+        res:'σa_base', unit:'kPa', dec:1, formula:'Ka · (γ · H + q)' },
+      { type:'sub', label:'Resultante del Empuje (por metro lineal)' },
+      { type:'calc', sym:'Pa_tri', label:'Componente triangular (peso del suelo)',
+        res:'Pa_tri', unit:'kN/m', dec:2, formula:'½ · Ka · γ · H²' },
+      { type:'calc', sym:'Pa_rec', label:'Componente rectangular (sobrecarga q)',
+        res:'Pa_rec', unit:'kN/m', dec:2, formula:'Ka · q · H' },
+      { type:'calc', sym:'Pa', label:'Empuje activo TOTAL',
+        res:'Pa', unit:'kN/m', dec:2, formula:'Pa_tri + Pa_rec' },
+      { type:'calc', sym:'Pp', label:'Empuje pasivo (solo informativo)',
+        res:'Pp', unit:'kN/m', dec:2, formula:'½ · Kp · γ · H_emp²  — Pp = 0 en FS_des (NCh 02 §3.2: omisión conservadora)' },
+      { type:'sub', label:'Momentos de Volcamiento (respecto a punta de zapata)' },
+      { type:'calc', sym:'ya_tri', label:'Brazo del triángulo de presión',
+        res:'ya_tri', unit:'m', dec:3, formula:'H / 3' },
+      { type:'calc', sym:'ya_rec', label:'Brazo del rectángulo de presión',
+        res:'ya_rec', unit:'m', dec:3, formula:'H / 2' },
+      { type:'calc', sym:'Mo', label:'Momento de volcamiento sobre la punta',
+        res:'Mo', unit:'kN·m/m', dec:2, formula:'Pa_tri · ya_tri + Pa_rec · ya_rec' },
+    ]
+  },
+  {
+    id:'pesos', num:'④', title:'④ Pesos y FS',
+    color:'#9a80f0',
+    desc:'Pesos propios, momento resistente y factores de seguridad geotécnicos',
+    rows:[
+      { type:'sub', label:'Material Hormigón Armado' },
+      { type:'inp', sym:'γc', label:'Peso unitario del hormigón armado',
+        grp:'materials', key:'gc', unit:'kN/m³', min:23, max:27, step:0.5,
+        note:'Hormigón armado normal: 24–25 kN/m³ (NCh170 Of.1985)' },
+      { type:'sub', label:'Pesos por Metro Lineal de Muro (W = γ · V)' },
+      { type:'calc', sym:'W₁', label:'Peso de la pantalla de hormigón',
+        res:'W_pantalla', unit:'kN/m', dec:2, formula:'γc · t · H_stem' },
+      { type:'calc', sym:'W₂', label:'Peso de la zapata corrida',
+        res:'W_zapata', unit:'kN/m', dec:2, formula:'γc · B · Hf' },
+      { type:'calc', sym:'W₃', label:'Peso del suelo sobre el talón',
+        res:'W_suelo', unit:'kN/m', dec:2, formula:'γ · B_talón · H_stem' },
+      { type:'calc', sym:'W₄', label:'Peso de sobrecarga sobre el talón',
+        res:'W_sc', unit:'kN/m', dec:2, formula:'q · B_talón' },
+      { type:'calc', sym:'N', label:'Resultante vertical total',
+        res:'N', unit:'kN/m', dec:2, formula:'W₁ + W₂ + W₃ + W₄' },
+      { type:'sub', label:'Momento Resistente (respecto a punta de zapata)' },
+      { type:'calc', sym:'Mr', label:'Momento resistente al volcamiento',
+        res:'Mr', unit:'kN·m/m', dec:2, formula:'W₁·x₁ + W₂·x₂ + W₃·x₃  — Σ(W_i · brazo_i)' },
+      { type:'sub', label:'Factores de Seguridad (NCh3171 §6)  — mínimo requerido: 1.50' },
+      { type:'calc', sym:'FS_vol', label:'Factor de seguridad al volcamiento',
+        res:'FS_volcamiento', unit:'—', dec:2,
+        formula:'Mr / Mo  — FS ≥ 1.5 (estático)', fsThresh:true },
+      { type:'calc', sym:'FS_des', label:'Factor de seguridad al deslizamiento',
+        res:'FS_deslizamiento', unit:'—', dec:2,
+        formula:'(μ · N) / Pa  — Pp = 0 (NCh 02 §3.2)  — FS ≥ 1.5 (estático)', fsThresh:true },
+    ]
+  },
+  {
+    id:'presion', num:'⑤', title:'⑤ Presión Zapata',
+    color:'#58a6ff',
+    desc:'Distribución de presiones bajo la zapata y verificación capacidad portante',
+    rows:[
+      { type:'sub', label:'Capacidad Portante del Sello de Fundación' },
+      { type:'inp', sym:'q_adm', label:'Presión admisible (pre-mecánica suelos)',
+        grp:'soil', key:'qAdm', unit:'kPa', min:50, max:1000, step:10,
+        note:'CBR 80%: ~150–250 kPa · Roca: 500–2000 kPa · Requiere estudio mecánica de suelos' },
+      { type:'inp', sym:'CBR', label:'Índice CBR de la base (solo referencial)',
+        grp:'soil', key:'cbr', unit:'%', min:5, max:100, step:5,
+        note:'Solo para diseño preliminar · Confirmar con ensayo Proctor y CBR in situ' },
+      { type:'sub', label:'Posición de la Resultante' },
+      { type:'calc', sym:'xR', label:'Posición de la resultante N (desde punta)',
+        res:'xR', unit:'m', dec:3, formula:'(Mr − Mo) / N' },
+      { type:'calc', sym:'e', label:'Excentricidad de la resultante',
+        res:'e', unit:'m', dec:3, formula:'B/2 − xR  — negativa: resultante hacia el talón' },
+      { type:'calc', sym:'e_max', label:'Excentricidad máxima (núcleo central)',
+        res:'e_max', unit:'m', dec:3, formula:'B / 6  — tercio central de la zapata' },
+      { type:'nucleus', sym:'○', label:'Verificación posición en el núcleo central' },
+      { type:'sub', label:'Distribución de Presiones bajo Zapata  — q(x)' },
+      { type:'calc', sym:'q_punta', label:'Presión en la punta (extremo delantero)',
+        res:'q_punta', unit:'kPa', dec:1,
+        formula:'(N/B) · (1 + 6|e|/B)  — Dentro del núcleo: distribución trapezoidal' },
+      { type:'calc', sym:'q_talón', label:'Presión en el talón (extremo posterior)',
+        res:'q_talon', unit:'kPa', dec:1,
+        formula:'(N/B) · (1 − 6|e|/B)  — Fuera del núcleo: triángulo Meyerhof (q_talón = 0)' },
+      { type:'qcheck', sym:'✓', label:'Verificación capacidad portante (q_máx ≤ q_adm)' },
+    ]
+  },
+  {
+    id:'pantalla', num:'⑥', title:'⑥ Diseño Pantalla',
+    color:'#9a80f0',
+    desc:'Diseño a flexión y corte de la pantalla — voladizo en base (NCh430 §3)',
+    rows:[
+      { type:'sub', label:'Materiales (NCh430 Of.2008)' },
+      { type:'inp', sym:"f'c", label:'Resistencia hormigón a compresión',
+        grp:'materials', key:'fc', unit:'MPa', min:17, max:50, step:1,
+        note:"NCh430: f'c mínimo 17 MPa · Exposición suelo: recomendado ≥ 25 MPa (H25)" },
+      { type:'inp', sym:'fy', label:'Límite de fluencia del acero',
+        grp:'materials', key:'fy', unit:'MPa', min:420, max:420, step:1,
+        note:'Acero A630-420H (NCh204): fy = 420 MPa — único grado habilitado en NCh430' },
+      { type:'inp', sym:'rec₁', label:'Recubrimiento pantalla (lado retenido)',
+        grp:'materials', key:'rec_pant', unit:'cm', min:4, max:8, step:0.5,
+        factor:100, storeFactor:0.01,
+        note:'NCh430 §7.7: con encofrado = 40 mm mínimo · Exposición suelo: 75 mm' },
+      { type:'sub', label:'Geometría de la Sección Transversal' },
+      { type:'calc', sym:'d', label:'Peralte efectivo de la pantalla',
+        res:'d_stem_cm', unit:'cm', dec:1,
+        formula:'t − rec₁ − Ø_barra/2  — barra estimada Ø12 mm' },
+      { type:'sub', label:'Solicitaciones en Base de Pantalla (Sección Crítica)' },
+      { type:'calc', sym:'M_serv', label:'Momento flector de servicio',
+        res:'M_base', unit:'kN·m/m', dec:2,
+        formula:'½·Ka·γ·H_stem³/3 + Ka·q·H_stem²/2' },
+      { type:'calc', sym:'Mu', label:'Momento último LRFD',
+        res:'Mu_stem', unit:'kN·m/m', dec:2,
+        formula:'1.6 × M_serv  — NCh430 §9.2.1: factor carga H (empuje suelo) = 1.6' },
+      { type:'calc', sym:'Vu', label:'Cortante último LRFD',
+        res:'Vu_stem', unit:'kN/m', dec:2,
+        formula:'1.6 × V_serv' },
+      { type:'sub', label:'Diseño de Armadura Vertical B1 (NCh430 §9.3)' },
+      { type:'calc', sym:'As_req', label:'Armadura vertical requerida (pantalla)',
+        res:'As_req', unit:'cm²/m', dec:2,
+        formula:'ρ · d · 1000  — ρ = max(ρ_req, ρ_min = 0.0015)  — barra cara retenida' },
+      { type:'sub', label:'Verificación de Corte sin Estribos (φVc ≥ Vu)' },
+      { type:'calc', sym:'φVc', label:'Resistencia a corte del hormigón',
+        res:'φVc_stem', unit:'kN/m', dec:2,
+        formula:"0.75 × 0.17 × √f'c × 1000 × d  — NCh430 §11.2.1" },
+      { type:'bool', sym:'○', label:'Verificación corte pantalla (sin estribos)',
+        boolKey:'shear_ok_stem',
+        okLabel:'✓ φVc ≥ Vu — Sin estribos requeridos',
+        failLabel:'✗ φVc < Vu — Aumentar espesor de pantalla t' },
+    ]
+  },
+  {
+    id:'punta', num:'⑦', title:'⑦ Zapata — Punta',
+    color:'#f8a030',
+    desc:'Diseño del pie de zapata como voladizo ascendente (NCh430 §4.1)',
+    rows:[
+      { type:'sub', label:'Recubrimiento Zapata' },
+      { type:'inp', sym:'rec_zap', label:'Recubrimiento base de zapata',
+        grp:'materials', key:'rec', unit:'cm', min:5, max:10, step:0.5,
+        factor:100, storeFactor:0.01,
+        note:'NCh430 §7.7: contacto directo con suelo → 75 mm mínimo' },
+      { type:'sub', label:'Geometría de la Sección de Zapata' },
+      { type:'calc', sym:'d_zap', label:'Peralte efectivo de la zapata',
+        res:'d_zap_cm', unit:'cm', dec:1,
+        formula:'Hf − rec_zap − Ø_barra/2  — barra estimada Ø12 mm' },
+      { type:'sub', label:'Solicitaciones Punta (Carga Neta Ascendente)' },
+      { type:'calc', sym:'w₀', label:'Carga neta en punta (x = 0)',
+        res:'w_toe_0', unit:'kPa', dec:1,
+        formula:'q_punta − γc · Hf  — neto ascendente descontando peso zapata' },
+      { type:'calc', sym:'wA', label:'Carga neta en cara anterior pantalla',
+        res:'w_toe_A', unit:'kPa', dec:1,
+        formula:'q(B_toe) − γc · Hf' },
+      { type:'calc', sym:'Mu_pie', label:'Momento último en cara anterior (LRFD)',
+        res:'Mu_toe', unit:'kN·m/m', dec:2,
+        formula:'1.6 × (B_toe²/6) × (2w₀ + wA)' },
+      { type:'sub', label:'Diseño Armadura Inferior Punta — Barra B3' },
+      { type:'calc', sym:'As_punta', label:'Armadura inferior punta (cara inferior)',
+        res:'As_toe', unit:'cm²/m', dec:2,
+        formula:'ρ · d_zap · 1000  — ρ = max(ρ_req, ρ_min = 0.0018)' },
+      { type:'sub', label:'Verificación de Corte Punta' },
+      { type:'calc', sym:'φVc_zap', label:'Resistencia a corte de la zapata',
+        res:'φVc_zap', unit:'kN/m', dec:2,
+        formula:"0.75 × 0.17 × √f'c × 1000 × d_zap" },
+      { type:'calc', sym:'Vu_pie', label:'Cortante último en punta (a distancia d)',
+        res:'Vu_toe', unit:'kN/m', dec:2,
+        formula:'1.6 × V_serv  — sección crítica a d de la cara anterior' },
+      { type:'bool', sym:'○', label:'Verificación corte zapata — punta',
+        boolKey:'shear_ok_toe',
+        okLabel:'✓ φVc ≥ Vu — Sección conforme',
+        failLabel:'✗ φVc < Vu — Aumentar Hf o reducir B_toe' },
+    ]
+  },
+  {
+    id:'talon', num:'⑧', title:'⑧ Zapata — Talón',
+    color:'#3fb950',
+    desc:'Diseño del talón de zapata como voladizo descendente (NCh430 §4.2)',
+    rows:[
+      { type:'sub', label:'Cargas en el Talón (Resultante Neta Descendente)' },
+      { type:'calc', sym:'w↓', label:'Carga descendente total sobre el talón',
+        res:'w_down', unit:'kPa', dec:1,
+        formula:'γ · H_stem + γc · Hf + q  — suelo + zapata + sobrecarga' },
+      { type:'calc', sym:'w_B', label:'Carga neta en cara posterior de pantalla',
+        res:'w_heel_B', unit:'kPa', dec:1,
+        formula:'w↓ − q(cara_posterior)  — descontando presión ascendente suelo' },
+      { type:'calc', sym:'w_T', label:'Carga neta en extremo del talón',
+        res:'w_heel_T', unit:'kPa', dec:1,
+        formula:'w↓ − q_talón' },
+      { type:'calc', sym:'Mu_talón', label:'Momento último en cara posterior (LRFD)',
+        res:'Mu_heel', unit:'kN·m/m', dec:2,
+        formula:'1.6 × (B_talón²/6) × (w_B + 2·w_T)' },
+      { type:'sub', label:'Diseño Armadura Superior Talón — Barra B4' },
+      { type:'calc', sym:'As_talón', label:'Armadura superior talón (cara superior)',
+        res:'As_heel', unit:'cm²/m', dec:2,
+        formula:'ρ · d_zap · 1000  — ρ = max(ρ_req, ρ_min = 0.0018)' },
+      { type:'sub', label:'Verificación de Corte Talón' },
+      { type:'calc', sym:'Vu_talón', label:'Cortante último en talón (a distancia d)',
+        res:'Vu_heel', unit:'kN/m', dec:2,
+        formula:'1.6 × (w_B + w_T)/2 × B_talón' },
+      { type:'bool', sym:'○', label:'Verificación corte zapata — talón',
+        boolKey:'shear_ok_heel',
+        okLabel:'✓ φVc ≥ Vu — Sección conforme',
+        failLabel:'✗ φVc < Vu — Aumentar Hf o reducir B_talón' },
+    ]
+  },
+];
+
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+let activeIdx = 0;
+
+function calcRes() {
+  const res = RWSolver.run(RW);
+  // Derived display fields
+  res.d_stem_cm = res.d_stem * 100;
+  res.d_zap_cm  = res.d_zap  * 100;
+  RW.results = res;
+  return res;
+}
+
+// ══════════════════════════════════════════════════════════════
+// RENDER NAV
+// ══════════════════════════════════════════════════════════════
+function renderNav() {
+  const nav = document.getElementById('section-nav');
+  nav.innerHTML = '<div class="nav-label">Secciones de Cálculo</div>' +
+    SECTIONS.map((s, i) => `
+      <button class="nav-btn ${i === activeIdx ? 'active' : ''}"
+              style="--sec-color:${s.color}"
+              onclick="switchSection(${i})">
+        <span class="nav-num">${s.num}</span>
+        <span class="nav-title">${s.title.replace(s.num + ' ', '')}</span>
+      </button>
+    `).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// RENDER SECTION TABLE
+// ══════════════════════════════════════════════════════════════
+function renderSection(idx) {
+  const sec = SECTIONS[idx];
+  const res = calcRes();
+
+  // Update header
+  document.getElementById('sec-title').textContent = sec.title;
+  document.getElementById('sec-title').style.color = sec.color;
+  document.getElementById('sec-desc').textContent = sec.desc;
+
+  let rows = '';
+  for (const row of sec.rows) {
+
+    if (row.type === 'sub') {
+      rows += `<tr class="row-sub"><td colspan="5">${row.label}</td></tr>`;
+      continue;
+    }
+
+    if (row.type === 'inp') {
+      const factor = row.factor || 1;
+      const storeFactor = row.storeFactor || 1;
+      const rawVal = RW[row.grp][row.key];
+      const dispVal = (rawVal * factor).toFixed(row.dec !== undefined ? row.dec : 2);
+      rows += `
+        <tr class="row-input">
+          <td class="col-sym"><code>${row.sym}</code></td>
+          <td class="col-desc">${row.label}</td>
+          <td class="col-val">
+            <input class="cell-input" type="number"
+                   value="${dispVal}"
+                   step="${row.step || 'any'}"
+                   min="${row.min !== undefined ? row.min : ''}"
+                   max="${row.max !== undefined ? row.max : ''}"
+                   data-grp="${row.grp}" data-key="${row.key}"
+                   data-store="${storeFactor}"
+                   oninput="handleInput(this)">
+          </td>
+          <td class="col-unit">${row.unit}</td>
+          <td class="col-state tag-input">▣ Dato</td>
+        </tr>
+        ${row.note ? `<tr class="row-formula"><td></td><td colspan="4" class="formula-text">${row.note}</td></tr>` : ''}
+      `;
+      continue;
+    }
+
+    if (row.type === 'calc') {
+      const val = res[row.res];
+      const dec = row.dec !== undefined ? row.dec : 2;
+      const dispVal = (val !== undefined && isFinite(val)) ? val.toFixed(dec) : '—';
+      const fsClass = row.fsThresh ? ' ' + getFsClass(val) : '';
+      rows += `
+        <tr class="row-calc">
+          <td class="col-sym"><code>${row.sym}</code></td>
+          <td class="col-desc">${row.label}</td>
+          <td class="col-val">
+            <span class="cell-output${fsClass}"
+                  data-res="${row.res}" data-dec="${dec}"
+                  ${row.fsThresh ? 'data-fs="1"' : ''}>${dispVal}</span>
+          </td>
+          <td class="col-unit">${row.unit}</td>
+          <td class="col-state tag-calc">◈ Calc</td>
+        </tr>
+        <tr class="row-formula"><td></td><td colspan="4" class="formula-text">= ${row.formula}</td></tr>
+      `;
+      continue;
+    }
+
+    if (row.type === 'bool') {
+      const val = res[row.boolKey];
+      const cls = val ? 'badge-ok' : 'badge-danger';
+      const txt = val ? row.okLabel : row.failLabel;
+      rows += `
+        <tr class="row-bool">
+          <td class="col-sym"><code>${row.sym}</code></td>
+          <td class="col-desc">${row.label}</td>
+          <td colspan="3" class="col-bool-result">
+            <span class="status-badge ${cls}"
+                  data-bool="${row.boolKey}"
+                  data-ok="${row.okLabel}"
+                  data-fail="${row.failLabel}">${txt}</span>
+          </td>
+        </tr>
+      `;
+      continue;
+    }
+
+    if (row.type === 'nucleus') {
+      const inside = Math.abs(res.e) <= res.e_max;
+      rows += `
+        <tr class="row-bool">
+          <td class="col-sym"><code>${row.sym}</code></td>
+          <td class="col-desc">${row.label}</td>
+          <td colspan="3" class="col-bool-result">
+            <span class="status-badge ${inside ? 'badge-ok' : 'badge-danger'}" data-nucleus="1">
+              ${inside
+                ? '✓ Dentro del núcleo central — distribución trapezoidal'
+                : '✗ Fuera del núcleo central — distribución triangular (Meyerhof, q_talón = 0)'}
+            </span>
+          </td>
+        </tr>
+      `;
+      continue;
+    }
+
+    if (row.type === 'qcheck') {
+      const qMax = Math.max(res.q_punta, res.q_talon);
+      const qAdm = RW.soil.qAdm;
+      const ok   = qMax <= qAdm;
+      rows += `
+        <tr class="row-bool">
+          <td class="col-sym"><code>${row.sym}</code></td>
+          <td class="col-desc">${row.label}</td>
+          <td colspan="3" class="col-bool-result">
+            <span class="status-badge ${ok ? 'badge-ok' : 'badge-danger'}" data-qcheck="1">
+              ${ok
+                ? `✓ q_máx = ${qMax.toFixed(1)} kPa ≤ q_adm = ${qAdm} kPa`
+                : `✗ q_máx = ${qMax.toFixed(1)} kPa > q_adm = ${qAdm} kPa — Revisar geometría`}
+            </span>
+          </td>
+        </tr>
+      `;
+      continue;
+    }
+  }
+
+  document.getElementById('sheet-body').innerHTML = rows;
+  document.getElementById('sheet-scroll').scrollTop = 0;
+  updateKPIBar(res);
+}
+
+// ══════════════════════════════════════════════════════════════
+// INPUT HANDLER — solo actualiza outputs, input mantiene foco
+// ══════════════════════════════════════════════════════════════
+function handleInput(el) {
+  const grp   = el.dataset.grp;
+  const key   = el.dataset.key;
+  const store = parseFloat(el.dataset.store) || 1;
+  const val   = parseFloat(el.value);
+  if (isNaN(val)) return;
+
+  RW[grp][key] = val * store;
+  const res = calcRes();
+  updateOutputs(res);
+  updateKPIBar(res);
+}
+
+// ══════════════════════════════════════════════════════════════
+// UPDATE OUTPUTS (sin re-renderizar inputs)
+// ══════════════════════════════════════════════════════════════
+function updateOutputs(res) {
+  // Celdas calculadas
+  document.querySelectorAll('[data-res]').forEach(el => {
+    const key = el.dataset.res;
+    const dec = parseInt(el.dataset.dec ?? '2');
+    const val = res[key];
+    if (val === undefined || val === null) return;
+    el.textContent = isFinite(val) ? val.toFixed(dec) : '∞';
+    if (el.dataset.fs) {
+      el.className = 'cell-output ' + getFsClass(val);
+    }
+  });
+
+  // Bool badges
+  document.querySelectorAll('[data-bool]').forEach(el => {
+    const key = el.dataset.bool;
+    const val = res[key];
+    if (val === undefined) return;
+    el.className = 'status-badge ' + (val ? 'badge-ok' : 'badge-danger');
+    el.textContent = val ? el.dataset.ok : el.dataset.fail;
+  });
+
+  // Nucleus check
+  document.querySelectorAll('[data-nucleus]').forEach(el => {
+    const inside = Math.abs(res.e) <= res.e_max;
+    el.className = 'status-badge ' + (inside ? 'badge-ok' : 'badge-danger');
+    el.textContent = inside
+      ? '✓ Dentro del núcleo central — distribución trapezoidal'
+      : '✗ Fuera del núcleo central — distribución triangular (Meyerhof, q_talón = 0)';
+  });
+
+  // Q portante check
+  document.querySelectorAll('[data-qcheck]').forEach(el => {
+    const qMax = Math.max(res.q_punta, res.q_talon);
+    const qAdm = RW.soil.qAdm;
+    const ok   = qMax <= qAdm;
+    el.className = 'status-badge ' + (ok ? 'badge-ok' : 'badge-danger');
+    el.textContent = ok
+      ? `✓ q_máx = ${qMax.toFixed(1)} kPa ≤ q_adm = ${qAdm} kPa`
+      : `✗ q_máx = ${qMax.toFixed(1)} kPa > q_adm = ${qAdm} kPa — Revisar geometría`;
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// KPI BAR
+// ══════════════════════════════════════════════════════════════
+function updateKPIBar(res) {
+  const fsv  = res.FS_volcamiento;
+  const fsd  = res.FS_deslizamiento;
+  const qMax = Math.max(res.q_punta, res.q_talon);
+  const qAdm = RW.soil.qAdm;
+
+  const set = (id, txt, cls) => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = txt; el.className = 'kpi-val ' + (cls||''); }
+  };
+
+  set('kpi-ka',  res.Ka.toFixed(3));
+  set('kpi-pa',  res.Pa.toFixed(2));
+  set('kpi-fsv', isFinite(fsv) ? fsv.toFixed(2) : '∞', getFsClass(fsv));
+  set('kpi-fsd', isFinite(fsd) ? fsd.toFixed(2) : '∞', getFsClass(fsd));
+  set('kpi-q',   `${qMax.toFixed(1)} / ${qAdm}`, qMax <= qAdm ? 'val-ok' : 'val-danger');
+  set('kpi-as',  res.As_req.toFixed(2));
+}
+
+function getFsClass(v) {
+  return v >= 1.5 ? 'val-ok' : v >= 1.2 ? 'val-warn' : 'val-danger';
+}
+
+// ══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════════
+function switchSection(idx) {
+  activeIdx = idx;
+  renderNav();
+  renderSection(idx);
+}
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  renderNav();
+  renderSection(0);
+});
+</script>
+</body>
+</html>
