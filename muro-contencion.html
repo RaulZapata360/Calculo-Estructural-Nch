@@ -59,61 +59,122 @@
     /* ─── LAYOUT ─────────────────────────────────────────── */
     #app { display:flex; flex:1; overflow:hidden; }
 
-    /* ─── SIDEBAR ────────────────────────────────────────── */
+    /* ─── SIDEBAR (Planillas) ────────────────────────────────────────── */
     #sidebar {
-      width: 270px; flex-shrink:0;
+      width: 420px; flex-shrink:0;
       background: var(--surface);
       border-right: 1px solid var(--border);
       display: flex; flex-direction: column; overflow: hidden;
     }
-    #sidebar-tabs {
-      display:flex; border-bottom:1px solid var(--border); flex-shrink:0;
+    #sidebar-body { flex:1; overflow-y:auto; padding:0; }
+
+    /* ─── SPREADSHEET STYLES ─────────────────────────────────────────── */
+    .spreadsheet-section {
+      padding: 16px 12px;
+      border-bottom: 1px solid var(--border);
     }
-    #sidebar-tabs button {
-      flex:1; padding:9px 4px; font-size:0.68rem; font-weight:600;
-      background:transparent; border:none; color:var(--text-muted);
-      cursor:pointer; border-bottom:2px solid transparent; transition:all 0.12s;
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid var(--accent-dim);
     }
-    #sidebar-tabs button.active { color:var(--accent); border-bottom-color:var(--accent); }
-    #sidebar-body { flex:1; overflow-y:auto; padding:14px 12px; }
-    .panel { display:none; }
-    .panel.active { display:block; }
-    .field-group { margin-bottom:18px; }
-    .field-group h4 {
-      font-size:0.70rem; font-weight:700; color:var(--text-muted);
-      text-transform:uppercase; letter-spacing:0.06em;
-      margin-bottom:8px; padding-bottom:5px;
-      border-bottom:1px solid var(--border);
+    .spreadsheet-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.72rem;
     }
-    .field-row {
-      display:grid; grid-template-columns:1fr auto auto;
-      align-items:center; gap:6px; margin-bottom:7px;
+    .calc-row {
+      display: contents;
     }
-    .field-row label { font-size:0.76rem; color:var(--text-muted); }
-    .field-row input {
-      width:72px; padding:4px 7px;
-      background:rgba(255,255,255,0.06); border:1px solid var(--border);
-      border-radius:4px; color:var(--text); font-size:0.78rem;
-      font-family:'JetBrains Mono',monospace; text-align:right;
+    .calc-row td {
+      padding: 5px 4px;
+      border: 1px solid var(--border);
     }
-    .field-row input:focus { outline:none; border-color:rgba(47,129,247,0.5); background:rgba(47,129,247,0.05); }
-    .field-row .unit { font-size:0.68rem; color:var(--text-muted); width:28px; }
-    .info-box {
-      background:rgba(47,129,247,0.06); border:1px solid rgba(47,129,247,0.2);
-      border-radius:6px; padding:9px 10px; font-size:0.72rem; color:var(--text-muted); line-height:1.5;
-      margin-top:8px;
+    .label-cell {
+      background: rgba(255,255,255,0.03);
+      color: var(--text-muted);
+      font-weight: 500;
+      text-align: left;
+      width: 50%;
     }
-    .soil-zone {
-      border-radius:6px; padding:8px 10px; margin-bottom:8px;
-      border:1px solid; font-size:0.72rem; line-height:1.6;
+    .cell-input {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(47,129,247,0.4);
+      text-align: right;
     }
-    .soil-zone .zone-title {
-      font-size:0.68rem; font-weight:700; text-transform:uppercase;
-      letter-spacing:0.05em; margin-bottom:3px;
+    .cell-input input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      padding: 2px;
+      outline: none;
     }
-    .zone-fill   { background:rgba(139,104,20,0.10); border-color:rgba(139,104,20,0.35); }
-    .zone-base   { background:rgba(200,152,42,0.10); border-color:rgba(200,152,42,0.35); }
-    .zone-free   { background:rgba(63,185,80,0.08);  border-color:rgba(63,185,80,0.30); }
+    .cell-input input:focus {
+      background: rgba(47,129,247,0.15);
+      box-shadow: inset 0 0 0 1px var(--accent);
+    }
+    .cell-output {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(139,148,158,0.3);
+      text-align: right;
+      color: var(--text);
+    }
+    .calc-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      display: block;
+      padding: 2px;
+    }
+    .unit-cell {
+      color: var(--text-muted);
+      text-align: left;
+      font-size: 0.65rem;
+      width: 30px;
+      background: rgba(255,255,255,0.02);
+    }
+    .status-cell {
+      text-align: center;
+      color: var(--text-muted);
+      width: 25px;
+      background: rgba(255,255,255,0.02);
+    }
+    .status-ok { color: var(--ok); font-weight: 700; }
+    .status-warn { color: var(--warn); font-weight: 700; }
+    .status-danger { color: var(--danger); font-weight: 700; }
+    .status-info { color: var(--accent); font-weight: 700; }
+    .formula-cell {
+      padding: 3px 4px;
+      background: rgba(47,129,247,0.06);
+      border: 1px solid rgba(47,129,247,0.2);
+      border-top: none;
+      color: var(--text-muted);
+      font-size: 0.65rem;
+      font-family: 'JetBrains Mono', monospace;
+      grid-column: 1 / -1;
+      cursor: help;
+    }
+    .table-separator {
+      display: contents;
+    }
+    .table-separator td {
+      height: 8px;
+      background: transparent;
+      border: none;
+      padding: 4px 0;
+    }
+
+    .spreadsheet-input {
+      width: 100% !important;
+    }
 
     /* ─── MAIN AREA ──────────────────────────────────────── */
     #main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
@@ -224,8 +285,13 @@
   <span class="badge">Módulo Independiente</span>
   <div class="spacer"></div>
   <select class="nav-select" onchange="if(this.value) window.location.href=this.value">
-    <option value="muro-contencion.html" selected>Versión: Hormigón Armado (Cantiléver)</option>
-    <option value="muro-albanileria.html">Versión: Albañilería Confinada (Baja Altura)</option>
+    <optgroup label="Hormigón Armado (Cantiléver)">
+      <option value="muro-contencion.html" selected>Calculadora y Planos</option>
+    </optgroup>
+    <optgroup label="Albañilería Confinada (Baja Altura)">
+      <option value="muro-albanileria.html">Planos de Construcción</option>
+      <option value="memoria-calculo-albanileria.html">Memoria de Cálculo</option>
+    </optgroup>
     <option value="index.html">Volver a Adosamiento</option>
   </select>
 </header>
@@ -235,175 +301,8 @@
 
   <!-- SIDEBAR -->
   <aside id="sidebar">
-    <div id="sidebar-tabs">
-      <button class="active" data-tab="geo"   onclick="setTab('geo',this)">Geometría</button>
-      <button                data-tab="soil"  onclick="setTab('soil',this)">Suelo</button>
-      <button                data-tab="loads" onclick="setTab('loads',this)">Cargas</button>
-      <button                data-tab="mat"   onclick="setTab('mat',this)">Materiales</button>
-    </div>
-    <div id="sidebar-body">
-
-      <!-- TAB: GEOMETRÍA -->
-      <div class="panel active" id="panel-geo">
-        <div class="field-group">
-          <h4>Pantalla (Muro)</h4>
-          <div class="field-row">
-            <label>H libre</label>
-            <input type="number" id="H_libre" value="1.00" step="0.05" min="0.5" onchange="onGeo('H_libre',this)">
-            <span class="unit">m</span>
-          </div>
-          <div class="field-row">
-            <label>H empotr.</label>
-            <input type="number" id="H_emp" value="0.40" step="0.05" min="0.1" onchange="onGeo('H_emp',this)">
-            <span class="unit">m</span>
-          </div>
-          <div class="field-row">
-            <label>Espesor t</label>
-            <input type="number" id="t_muro" value="0.25" step="0.02" min="0.12" onchange="onGeo('t_muro',this)">
-            <span class="unit">m</span>
-          </div>
-          <div class="field-row">
-            <label>Longitud L</label>
-            <input type="number" id="L" value="6.00" step="0.5" min="1" onchange="onGeo('L',this)">
-            <span class="unit">m</span>
-          </div>
-        </div>
-        <div class="field-group">
-          <h4>Zapata Corrida</h4>
-          <div class="field-row">
-            <label>Ancho B</label>
-            <input type="number" id="B_zap" value="1.20" step="0.05" min="0.3" onchange="onGeo('B_zap',this)">
-            <span class="unit">m</span>
-          </div>
-          <div class="field-row">
-            <label>Altura Hf</label>
-            <input type="number" id="Hf" value="0.25" step="0.05" min="0.15" onchange="onGeo('Hf',this)">
-            <span class="unit">m</span>
-          </div>
-          <div class="field-row">
-            <label>Pie (toe)</label>
-            <input type="number" id="B_toe" value="0.50" step="0.05" min="0" onchange="onGeo('B_toe',this)">
-            <span class="unit">m</span>
-          </div>
-          <div class="info-box" id="geo-info"></div>
-        </div>
-      </div>
-
-      <!-- TAB: SUELO -->
-      <div class="panel" id="panel-soil">
-        <!-- ZONA 1: Relleno retenido -->
-        <div class="soil-zone zone-fill">
-          <div class="zone-title" style="color:#c8a050;">⬛ Relleno retenido (detrás del muro)</div>
-          Grava drenante GP/GW · sin finos · drenaje libre<br>
-          Evita presión hidrostática sobre la pantalla
-        </div>
-        <div class="field-group">
-          <h4>Propiedades Relleno (GP)</h4>
-          <div class="field-row">
-            <label>γ relleno</label>
-            <input type="number" id="gamma" value="19.0" step="0.5" min="14" max="22" onchange="onSoil('gamma',this)">
-            <span class="unit">kN/m³</span>
-          </div>
-          <div class="field-row">
-            <label>φ fricción</label>
-            <input type="number" id="phi" value="35" step="1" min="20" max="45" onchange="onSoil('phi',this)">
-            <span class="unit">°</span>
-          </div>
-          <div class="field-row">
-            <label>c cohesión</label>
-            <input type="number" id="c" value="0" step="1" min="0" onchange="onSoil('c',this)">
-            <span class="unit">kPa</span>
-          </div>
-          <div class="field-row">
-            <label>N.F. (prof.)</label>
-            <input type="number" id="NF" value="3.0" step="0.1" min="0" onchange="onSoil('NF',this)">
-            <span class="unit">m</span>
-          </div>
-          <div class="info-box" id="soil-info"></div>
-        </div>
-
-        <!-- ZONA 2: Sello de fundación -->
-        <div class="soil-zone zone-base">
-          <div class="zone-title" style="color:#d4a44a;">▭ Sello de fundación (bajo zapata)</div>
-          Base estabilizada · CBR ~80% · compactada al 95% DSMR<br>
-          Pendiente mecánica de suelos para confirmar q<sub>adm</sub>
-        </div>
-        <div class="field-group">
-          <h4>Base Estabilizada (pre-dimensión)</h4>
-          <div class="field-row">
-            <label>q adm. (est.)</label>
-            <input type="number" id="qAdm" value="200" step="10" min="50" onchange="onSoil('qAdm',this)">
-            <span class="unit">kPa</span>
-          </div>
-          <div class="field-row">
-            <label>CBR</label>
-            <input type="number" id="cbr" value="80" step="5" min="10" max="100" onchange="onSoil('cbr',this)">
-            <span class="unit">%</span>
-          </div>
-        </div>
-
-        <!-- ZONA 3: Lado libre -->
-        <div class="soil-zone zone-free">
-          <div class="zone-title" style="color:#5a9e6a;">▲ Terreno natural (frente del muro)</div>
-          Terreno natural in situ · resistencia pasiva Rankine<br>
-          <em>NCh 02 §3.2: Pp = 0 en FS_d (omisión conservadora)</em>
-        </div>
-      </div>
-
-      <!-- TAB: CARGAS -->
-      <div class="panel" id="panel-loads">
-        <div class="field-group">
-          <h4>Sobrecarga en Coronación</h4>
-          <div class="field-row">
-            <label>q sobrecarga</label>
-            <input type="number" id="qSobrecarga" value="0" step="1" min="0" onchange="onLoads('qSobrecarga',this)">
-            <span class="unit">kPa</span>
-          </div>
-          <div class="info-box" style="margin-bottom:12px;">
-            Carga distribuida uniforme sobre el relleno.<br>
-            Tráfico vehicular: 5–10 kPa · Almacenamiento: 10–20 kPa
-          </div>
-        </div>
-        <!-- Cálculo detallado de fuerzas (se llena desde JS) -->
-        <div id="carga-breakdown"></div>
-      </div>
-
-      <!-- TAB: MATERIALES -->
-      <div class="panel" id="panel-mat">
-        <div class="field-group">
-          <h4>Hormigón y Acero</h4>
-          <div class="field-row">
-            <label>f'c hormigón</label>
-            <input type="number" id="fc" value="25" step="5" min="17" onchange="onMat('fc',this)">
-            <span class="unit">MPa</span>
-          </div>
-          <div class="field-row">
-            <label>fy acero</label>
-            <input type="number" id="fy" value="420" step="0" min="420" onchange="onMat('fy',this)">
-            <span class="unit">MPa</span>
-          </div>
-          <div class="field-row">
-            <label>γ hormigón</label>
-            <input type="number" id="gc" value="25.0" step="0.5" onchange="onMat('gc',this)">
-            <span class="unit">kN/m³</span>
-          </div>
-          <div class="field-row">
-            <label>Rec. pantalla</label>
-            <input type="number" id="rec_pant" value="5" step="1" min="4" onchange="onMat('rec_pant',this)">
-            <span class="unit">cm</span>
-          </div>
-          <div class="field-row">
-            <label>Rec. zapata</label>
-            <input type="number" id="rec" value="7" step="1" min="5" onchange="onMat('rec',this)">
-            <span class="unit">cm</span>
-          </div>
-        </div>
-        <div class="info-box">
-          NCh430 §3.1: rec. pantalla = 5 cm (con encofrado); rec. zapata = 7 cm (contacto directo suelo).
-        </div>
-        <!-- Diseño armadura (se llena desde JS) -->
-        <div id="mat-breakdown"></div>
-      </div>
+    <div id="sidebar-body" class="spreadsheet-container">
+      <!-- PLANILLAS DE CÁLCULO (se generan desde RWSpreadsheet.render()) -->
 
     </div>
   </aside>
@@ -476,6 +375,7 @@
 
 <script src="modules/retencion/state.js"></script>
 <script src="modules/retencion/solver.js"></script>
+<script src="modules/retencion/spreadsheet.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
 // PAN / ZOOM STATE
@@ -585,36 +485,62 @@ const SCENE_W = 1060;
 const SCENE_H =  680;
 
 // ══════════════════════════════════════════════════════════════
-// UI CONTROLLER
+// INITIALIZATION
 // ══════════════════════════════════════════════════════════════
-function setTab(tab, btn) {
-  document.querySelectorAll('#sidebar-tabs button').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('panel-' + tab).classList.add('active');
-  RW.ui.tab = tab;
-}
-
-function onGeo(key, el)   { RW.geometry[key]  = parseFloat(el.value) || 0; refresh(); }
-function onSoil(key, el)  { RW.soil[key]       = parseFloat(el.value) || 0; refresh(); }
-function onLoads(key, el) { RW.loads[key]      = parseFloat(el.value) || 0; refresh(); }
-function onMat(key, el)   {
-  const v = parseFloat(el.value) || 0;
-  RW.materials[key] = (key === 'rec' || key === 'rec_pant') ? v / 100 : v;
+document.addEventListener('DOMContentLoaded', function() {
+  setupPanZoom();
   refresh();
-}
+});
 
 // ══════════════════════════════════════════════════════════════
 // REFRESH
 // ══════════════════════════════════════════════════════════════
 function refresh() {
+  // Extraer cambios desde las planillas
+  const changes = RWSpreadsheet.extractInputChanges();
+
+  // Aplicar cambios al estado
+  Object.keys(changes).forEach(key => {
+    // Buscar la clave en la estructura RW
+    if (RW.geometry[key] !== undefined) {
+      RW.geometry[key] = changes[key];
+    } else if (RW.soil[key] !== undefined) {
+      RW.soil[key] = changes[key];
+    } else if (RW.loads[key] !== undefined) {
+      RW.loads[key] = changes[key];
+    } else if (RW.materials[key] !== undefined) {
+      // Convertir cm a m si es recubrimiento
+      const val = key.includes('rec') && changes[key] < 1 ? changes[key] / 100 : changes[key];
+      RW.materials[key] = val;
+    }
+  });
+
+  // Recalcular
   const res = RWSolver.run(RW);
   RW.results = res;
-  updateInfoBoxes(res);
+
+  // Renderizar planillas (reemplaza los viejos panels)
+  document.getElementById('sidebar-body').innerHTML = RWSpreadsheet.render(RW, res);
+
+  // Vincular eventos de cambio en nuevas planillas
+  setupSpreadsheetListeners();
+
+  // Actualizar visualizaciones
   renderResults(res);
-  renderCargas(res);
-  renderMat(res);
   drawWallSVG(RW, res);
+}
+
+function setupSpreadsheetListeners() {
+  document.querySelectorAll('.spreadsheet-input').forEach(input => {
+    input.addEventListener('change', () => {
+      refresh();
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        refresh();
+      }
+    });
+  });
 }
 
 function updateInfoBoxes(res) {
