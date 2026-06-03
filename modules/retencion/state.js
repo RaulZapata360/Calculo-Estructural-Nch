@@ -39,7 +39,7 @@ function initRW() {
 
     // ── Cargas ───────────────────────────────────────────────────
     loads: {
-      qSobrecarga: 0,  // kPa  sobrecarga distribuida sobre el relleno (vehículos…)
+      qSobrecarga: 10, // kPa  sobrecarga vivienda 1 piso metalcon sobre terreno retenido (NCh1537)
     },
 
     // ── Materiales ───────────────────────────────────────────────
